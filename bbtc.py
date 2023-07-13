@@ -1,6 +1,7 @@
 import asyncio
 import socket
 import ssl
+import sys
 
 from itertools import count, takewhile
 from typing import Iterator
@@ -10,106 +11,51 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.device import BLEDevice
 from bleak.backends.scanner import AdvertisementData
 
+import tcat_tlv
+from ble_stream import BleStream
+from ble_stream_secure import BleStreamSecure
+
 UART_SERVICE_UUID = '6E400001-B5A3-F393-E0A9-E50E24DCCA9E'
-UART_RX_CHAR_UUID = '6E400002-B5A3-F393-E0A9-E50E24DCCA9E'
 UART_TX_CHAR_UUID = '6E400003-B5A3-F393-E0A9-E50E24DCCA9E'
+UART_RX_CHAR_UUID = '6E400002-B5A3-F393-E0A9-E50E24DCCA9E'
 
 
-def sliced(data: bytes, n: int) -> Iterator[bytes]:
-    return takewhile(len, (data[i: i + n] for i in count(0, n)))
-
-
-class BleSocket:
-    def __init__(self, client, family=socket.AF_INET, type=socket.SOCK_STREAM, proto=socket.IPPROTO_TCP, fileno=1):
-        self.__receive_buffer = b''
-        self.client = client
-        self.family = family
-        self.type = type
-        self.proto = proto
-        self._fileno = fileno
-
-    def __handle_rx(self, _: BleakGATTCharacteristic, data: bytearray):
-        print(f'received {len(data)} bytes')
-        self.__receive_buffer += data
-
-    @classmethod
-    async def create(cls, client: BleakClient):
-        self = cls(client)
-        await client.start_notify(UART_TX_CHAR_UUID, self.__handle_rx)
-        return self
-
-    def send(self, data, flags=0):
-        print('sending ', data)
-        services = self.client.services.get_service(UART_SERVICE_UUID)
-        rx_char = services.get_characteristic(UART_RX_CHAR_UUID)
-        for s in sliced(data, rx_char.max_write_without_response_size):
-            asyncio.ensure_future(self.client.write_gatt_char(rx_char, s))
-
-        return len(data)
-
-    def recv(self, bufsize, flags=0):
-        message = self.__receive_buffer[:bufsize]
-        self.__receive_buffer = self.__receive_buffer[bufsize:]
-        print('retrieved', message)
-        return message
-
-    def fileno(self):
-        return self._fileno
-
-    def detach(self):
-        fileno = self._fileno
-        self._fileno = -1
-        return fileno
-
-    def getsockopt(self, level, optname, buflen=256):
-        if optname == ssl.SO_TYPE:
-            return ssl.SOCK_STREAM
-
-    def fileno(self):
-        return self._fileno
+dataset = bytes([
+    0x0e, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+    0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x12, 0x35,
+    0x06, 0x00, 0x04, 0x00, 0x1f, 0xff, 0xe0, 0x02,
+    0x08, 0xef, 0x13, 0x98, 0xc2, 0xfd, 0x50, 0x4b,
+    0x67, 0x07, 0x08, 0xfd, 0x35, 0x34, 0x41, 0x33,
+    0xd1, 0xd7, 0x3e, 0x05, 0x10, 0xfd, 0xa7, 0xc7,
+    0x71, 0xa2, 0x72, 0x02, 0xe2, 0x32, 0xec, 0xd0,
+    0x4c, 0xf9, 0x34, 0xf4, 0x76, 0x03, 0x0f, 0x4f,
+    0x70, 0x65, 0x6e, 0x54, 0x68, 0x72, 0x65, 0x61,
+    0x64, 0x2d, 0x63, 0x36, 0x34, 0x65, 0x01, 0x02,
+    0xc6, 0x4e, 0x04, 0x10, 0x5e, 0x9b, 0x9b, 0x36,
+    0x0f, 0x80, 0xb8, 0x8b, 0xe2, 0x60, 0x3f, 0xb0,
+    0x13, 0x5c, 0x8d, 0x65, 0x0c, 0x04, 0x02, 0xa0,
+    0xf7, 0xf8])
 
 
 async def main():
-    async with BleakClient('dc:b5:68:7d:2c:45') \
-            as client:
-        print('BLE connected')
-        ble_socket = await BleSocket.create(client)
+    async with await BleStream.create('dc:b5:68:7d:2c:45', UART_SERVICE_UUID, UART_TX_CHAR_UUID, UART_RX_CHAR_UUID) \
+            as ble_stream:
+        ble_sstream = BleStreamSecure(ble_stream)
+        ble_sstream.load_cert(certfile='auth/app/certificate.pem', keyfile='auth/app/privatekey.pem', cafile='auth/app/ca_certificate.pem')
+        await ble_sstream.do_handshake('DeviceType')
 
-        context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-        context.load_cert_chain(certfile='auth/app/certificate.pem', keyfile='auth/app/privatekey.pem')
-        context.load_verify_locations(cafile='auth/app/ca_certificate.pem')
+        print('commissioning')
+        data = tcat_tlv.TcatTLV(tcat_tlv.TcatTLV.Type.ACTIVE_DATASET, dataset).to_bytes()
+        await ble_sstream.send(data)
 
-        # context.check_hostname = False
-        # context.verify_mode = ssl.CERT_NONE
+        print('sending hello world')
+        data = tcat_tlv.TcatTLV(tcat_tlv.TcatTLV.Type.APPLICATION, bytes('hello_world', 'ascii')).to_bytes()
+        await ble_sstream.send(data)
 
-        incoming = ssl.MemoryBIO()
-        outgoing = ssl.MemoryBIO()
-        ssl_object = context.wrap_bio(incoming=incoming, outgoing=outgoing, server_side=False, server_hostname='DeviceType')
+        response = await ble_sstream.recv(4096, timeout=1)
+        tlv_response = tcat_tlv.TcatTLV.from_bytes(response)
+        print('hello world response:', tlv_response.type, tlv_response.data)
 
-        # handshake
-        while True:
-            try:
-                ssl_object.do_handshake()
-                break
-            except ssl.SSLWantWriteError:
-                output = ble_socket.recv(4096)
-                if output:
-                    incoming.write(output)
-                data = outgoing.read()
-                if data:
-                    ble_socket.send(data)
-                await asyncio.sleep(1)
-                
-            except ssl.SSLWantReadError:
-                data = outgoing.read()
-                if data:
-                    ble_socket.send(data)
-                output = ble_socket.recv(4096)
-                if output:
-                    incoming.write(output)
-                await asyncio.sleep(1)
-
-        print('connected')
         while True:
             await asyncio.sleep(1)
 
