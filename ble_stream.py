@@ -1,5 +1,3 @@
-import asyncio
-
 from itertools import count, takewhile
 from typing import Iterator
 

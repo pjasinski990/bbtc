@@ -1,19 +1,11 @@
 import asyncio
-import socket
-import ssl
-import sys
+import argparse
 
-from itertools import count, takewhile
-from typing import Iterator
-
-from bleak import BleakClient, BleakScanner
-from bleak.backends.characteristic import BleakGATTCharacteristic
-from bleak.backends.device import BLEDevice
-from bleak.backends.scanner import AdvertisementData
-
-import tcat_tlv
 from ble_stream import BleStream
 from ble_stream_secure import BleStreamSecure
+
+import tcat_tlv
+import ble_util
 
 UART_SERVICE_UUID = '6E400001-B5A3-F393-E0A9-E50E24DCCA9E'
 UART_TX_CHAR_UUID = '6E400003-B5A3-F393-E0A9-E50E24DCCA9E'
@@ -37,8 +29,39 @@ dataset = bytes([
     0xf7, 0xf8])
 
 
+def get_int_in_range(minv, maxv):
+    while True:
+        try:
+            num = int(input())
+            if minv <= num <= maxv:
+                return num
+            else:
+                print(f'Invalid value: Number not in range {minv}-{maxv}. Please try again.')
+        except ValueError:
+            print('Error: Invalid input. Please enter a number.')
+
+
 async def main():
-    async with await BleStream.create('dc:b5:68:7d:2c:45', UART_SERVICE_UUID, UART_TX_CHAR_UUID, UART_RX_CHAR_UUID) \
+    parser = argparse.ArgumentParser(description='Device parameters')
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--mac', type=str, help='Device MAC address', action='store')
+    group.add_argument('--name', type=str, help='Device name', action='store')
+    group.add_argument('--uuid', type=str, help='Target service UUID', action='store')
+    args = parser.parse_args()
+
+    device = None
+    if args.mac:
+        device = await ble_util.find_first_by_mac(args.mac)
+    elif args.name:
+        device = await ble_util.find_first_by_name(args.name)
+    elif args.uuid:
+        device = await ble_util.find_first_by_service_uuid(args.uuid)
+
+    if device is None:
+        print('Device not found')
+        exit(1)
+
+    async with await BleStream.create(device.address, UART_SERVICE_UUID, UART_TX_CHAR_UUID, UART_RX_CHAR_UUID) \
             as ble_stream:
         ble_sstream = BleStreamSecure(ble_stream)
         ble_sstream.load_cert(certfile='auth/app/certificate.pem', keyfile='auth/app/privatekey.pem', cafile='auth/app/ca_certificate.pem')
