@@ -1,10 +1,11 @@
 import asyncio
 import argparse
+import sys
 
 from ble_stream import BleStream
 from ble_stream_secure import BleStreamSecure
 
-import tcat_tlv
+from tcat_tlv import TcatTLV
 import ble_util
 
 UART_SERVICE_UUID = '6E400001-B5A3-F393-E0A9-E50E24DCCA9E'
@@ -27,18 +28,6 @@ dataset = bytes([
     0x0f, 0x80, 0xb8, 0x8b, 0xe2, 0x60, 0x3f, 0xb0,
     0x13, 0x5c, 0x8d, 0x65, 0x0c, 0x04, 0x02, 0xa0,
     0xf7, 0xf8])
-
-
-def get_int_in_range(minv, maxv):
-    while True:
-        try:
-            num = int(input())
-            if minv <= num <= maxv:
-                return num
-            else:
-                print(f'Invalid value: Number not in range {minv}-{maxv}. Please try again.')
-        except ValueError:
-            print('Error: Invalid input. Please enter a number.')
 
 
 async def main():
@@ -65,22 +54,45 @@ async def main():
             as ble_stream:
         ble_sstream = BleStreamSecure(ble_stream)
         ble_sstream.load_cert(certfile='auth/app/certificate.pem', keyfile='auth/app/privatekey.pem', cafile='auth/app/ca_certificate.pem')
-        await ble_sstream.do_handshake('DeviceType')
+        await ble_sstream.do_handshake(hostname='DeviceType')
 
-        print('commissioning')
-        data = tcat_tlv.TcatTLV(tcat_tlv.TcatTLV.Type.ACTIVE_DATASET, dataset).to_bytes()
-        await ble_sstream.send(data)
-
-        print('sending hello world')
-        data = tcat_tlv.TcatTLV(tcat_tlv.TcatTLV.Type.APPLICATION, bytes('hello_world', 'ascii')).to_bytes()
-        await ble_sstream.send(data)
-
-        response = await ble_sstream.recv(4096, timeout=1)
-        tlv_response = tcat_tlv.TcatTLV.from_bytes(response)
-        print('hello world response:', tlv_response.type, tlv_response.data)
-
+        loop = asyncio.get_running_loop()
+        print('Type \'help\' to see commands')
         while True:
-            await asyncio.sleep(1)
+            data = await loop.run_in_executor(None, sys.stdin.buffer.readline)
+            if data:
+                data = data.strip().decode(encoding='ascii')
+                if data == 'help':
+                    print('available commands:')
+                    print('\tcommission - send dataset')
+                    print('\tthread on - enable thread')
+                    print('\tthread off - disable thread')
+                    print('\thello - send "hello world" application data')
+                elif data == 'commission':
+                    print('commissioning')
+                    data = TcatTLV(TcatTLV.Type.ACTIVE_DATASET, dataset).to_bytes()
+                    await ble_sstream.send(data)
+                elif data == 'thread on':
+                    print('enabling thread')
+                    data = TcatTLV(TcatTLV.Type.COMMAND, TcatTLV.Command.COMMAND_THREAD_ON.to_bytes()).to_bytes()
+                    await ble_sstream.send(data)
+                    response = await ble_sstream.recv(4096, timeout=1)
+                    tlv_response = TcatTLV.from_bytes(response)
+                    print('thread on response:', tlv_response.type, tlv_response.data)
+                elif data == 'thread off':
+                    print('disabling thread')
+                    data = TcatTLV(TcatTLV.Type.COMMAND, TcatTLV.Command.COMMAND_THREAD_OFF.to_bytes()).to_bytes()
+                    await ble_sstream.send(data)
+                    response = await ble_sstream.recv(4096, timeout=1)
+                    tlv_response = TcatTLV.from_bytes(response)
+                    print('thread off response:', tlv_response.type, tlv_response.data)
+                elif data == 'hello':
+                    print('sending hello world')
+                    data = TcatTLV(TcatTLV.Type.APPLICATION, bytes('hello_world', 'ascii')).to_bytes()
+                    await ble_sstream.send(data)
+                    response = await ble_sstream.recv(4096, timeout=1)
+                    tlv_response = TcatTLV.from_bytes(response)
+                    print('hello world response:', tlv_response.type, tlv_response.data)
 
 
 if __name__ == '__main__':

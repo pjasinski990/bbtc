@@ -12,10 +12,22 @@ class TcatTLV:
         def from_value(cls, value):
             return cls._value2member_map_.get(value)
 
+    class Command(Enum):
+        COMMAND_THREAD_ON  = 0x01
+        COMMAND_THREAD_OFF = 0x02
+
+        def to_bytes(self):
+            return bytes([self.value])
+
+        @classmethod
+        def from_value(cls, value):
+            return cls._value2member_map_.get(value)
+
 
     def __init__(self, type: Type = Type.UNDEFINED, data: bytes = bytes()):
         self.type = type
         self.data = data
+
 
     def to_bytes(self):
         has_long_header = len(self.data) >= 255
