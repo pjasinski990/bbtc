@@ -17,6 +17,7 @@
 import asyncio
 import argparse
 import sys
+from os import path
 
 from ble_stream import BleStream
 from ble_stream_secure import BleStreamSecure
@@ -69,7 +70,12 @@ async def main():
     async with await BleStream.create(device.address, UART_SERVICE_UUID, UART_TX_CHAR_UUID, UART_RX_CHAR_UUID) \
             as ble_stream:
         ble_sstream = BleStreamSecure(ble_stream)
-        ble_sstream.load_cert(certfile='auth/app/certificate.pem', keyfile='auth/app/privatekey.pem', cafile='auth/app/ca_certificate.pem')
+        ble_sstream.load_cert(
+            certfile=path.join('auth', 'certificate.pem'),
+            keyfile=path.join('auth', 'privatekey.pem'),
+            cafile=path.join('auth', 'ca_certificate.pem')
+            )
+
         await ble_sstream.do_handshake(hostname='DeviceType')
 
         loop = asyncio.get_running_loop()
