@@ -40,3 +40,4 @@ The application supports following interactive CLI commands:
 - `thread on` - enable Thread interface
 - `thread off` - disable Thread interface
 - `hello` - send "hello world" application data and read the response
+- `exit` - close the connection and exit

@@ -79,42 +79,49 @@ async def main():
         await ble_sstream.do_handshake(hostname='DeviceType')
 
         loop = asyncio.get_running_loop()
-        print('Type \'help\' to see commands')
+        print('Enter \'help\' to see available commands')
         while True:
             data = await loop.run_in_executor(None, sys.stdin.buffer.readline)
             if data:
                 data = data.strip().decode(encoding='ascii')
                 if data == 'help':
-                    print('available commands:')
+                    print('Available commands:')
                     print('\tcommission - send dataset')
                     print('\tthread on - enable thread')
                     print('\tthread off - disable thread')
                     print('\thello - send "hello world" application data')
+                    print('\texit - close the connection and exit')
                 elif data == 'commission':
-                    print('commissioning')
+                    print('Commissioning')
                     data = TcatTLV(TcatTLV.Type.ACTIVE_DATASET, dataset).to_bytes()
                     await ble_sstream.send(data)
                 elif data == 'thread on':
-                    print('enabling thread')
+                    print('Enabling Thread')
                     data = TcatTLV(TcatTLV.Type.COMMAND, TcatTLV.Command.COMMAND_THREAD_ON.to_bytes()).to_bytes()
                     await ble_sstream.send(data)
                     response = await ble_sstream.recv(4096, timeout=1)
                     tlv_response = TcatTLV.from_bytes(response)
                     print('thread on response:', tlv_response.type, tlv_response.data)
                 elif data == 'thread off':
-                    print('disabling thread')
+                    print('Disabling Thread')
                     data = TcatTLV(TcatTLV.Type.COMMAND, TcatTLV.Command.COMMAND_THREAD_OFF.to_bytes()).to_bytes()
                     await ble_sstream.send(data)
                     response = await ble_sstream.recv(4096, timeout=1)
                     tlv_response = TcatTLV.from_bytes(response)
                     print('thread off response:', tlv_response.type, tlv_response.data)
                 elif data == 'hello':
-                    print('sending hello world')
+                    print('Sending hello world')
                     data = TcatTLV(TcatTLV.Type.APPLICATION, bytes('hello_world', 'ascii')).to_bytes()
                     await ble_sstream.send(data)
                     response = await ble_sstream.recv(4096, timeout=1)
                     tlv_response = TcatTLV.from_bytes(response)
-                    print('hello world response:', tlv_response.type, tlv_response.data)
+                    print('hello response:', tlv_response.type, tlv_response.data)
+                elif data == 'exit':
+                    print('Disconnecting...')
+                    break
+                elif data:
+                    print('Unknown command:', data)
+                    print('Enter \'help\' to see available commands')
 
 
 if __name__ == '__main__':
