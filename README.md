@@ -19,12 +19,14 @@ This will install all the required modules to a virtual environment, which can b
 ## Usage
 In order to connect to a TCAT device, enter the project directory and run:
 ```bash
-poetry run python3 bbtc.py <device specifier>
+poetry run python3 bbtc.py {<device specifier> | --scan}
 ```
 where device specifier can be:
 - `--name <NAME>` - name advertised by the device
 - `--mac <ADDRESS>` - physical address of the device's Bluetooth interface
 - `--uuid <SERVICE_UUID>` - uuid of a service that is advertised by the device
+
+Using `--scan` option will scan for every TCAT device and display them in a list, to allow selection of the target.
 
 For examle:
 ```
