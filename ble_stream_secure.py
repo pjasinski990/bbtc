@@ -44,6 +44,7 @@ class BleStreamSecure:
             try:
                 self.ssl_object.do_handshake()
                 break
+            # SSLWantWrite means ssl wants to send data over the link, but might need a receive first
             except ssl.SSLWantWriteError:
                 output = self.ble_stream.recv(4096)
                 if output:
@@ -51,8 +52,9 @@ class BleStreamSecure:
                 data = self.outgoing.read()
                 if data:
                     await self.ble_stream.send(data)
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.1)
 
+            # SSLWantWrite means ssl wants to receive data from the link, but might need to send first
             except ssl.SSLWantReadError:
                 data = self.outgoing.read()
                 if data:
@@ -60,7 +62,7 @@ class BleStreamSecure:
                 output = self.ble_stream.recv(4096)
                 if output:
                     self.incoming.write(output)
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.1)
 
 
     async def send(self, bytes):
@@ -79,5 +81,15 @@ class BleStreamSecure:
             return b''
 
         self.incoming.write(data)
-        decode = self.ssl_object.read(4096)
+        while True:
+            try:
+                decode = self.ssl_object.read(4096)
+                break
+            # if recv called before entire message was received from the link
+            except ssl.SSLWantReadError:
+                more = self.ble_stream.recv(buffersize)
+                while not more:
+                    await asyncio.sleep(0.1)
+                    more = self.ble_stream.recv(buffersize)
+                self.incoming.write(more)
         return decode
