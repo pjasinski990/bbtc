@@ -16,36 +16,17 @@
 
 import asyncio
 import argparse
-import sys
 from os import path
 import logging
 
 from ble_stream import BleStream
 from ble_stream_secure import BleStreamSecure
-
-from tcat_tlv import TcatTLV
-import ble_util
+import ble_scanner
+from cli import CLI
 
 BBTC_SERVICE_UUID = '6E400001-B5A3-F393-E0A9-E50E24DCCA9E'
 BBTC_TX_CHAR_UUID = '6E400003-B5A3-F393-E0A9-E50E24DCCA9E'
 BBTC_RX_CHAR_UUID = '6E400002-B5A3-F393-E0A9-E50E24DCCA9E'
-
-
-dataset = bytes([
-    0x0e, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-    0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x12, 0x35,
-    0x06, 0x00, 0x04, 0x00, 0x1f, 0xff, 0xe0, 0x02,
-    0x08, 0xef, 0x13, 0x98, 0xc2, 0xfd, 0x50, 0x4b,
-    0x67, 0x07, 0x08, 0xfd, 0x35, 0x34, 0x41, 0x33,
-    0xd1, 0xd7, 0x3e, 0x05, 0x10, 0xfd, 0xa7, 0xc7,
-    0x71, 0xa2, 0x72, 0x02, 0xe2, 0x32, 0xec, 0xd0,
-    0x4c, 0xf9, 0x34, 0xf4, 0x76, 0x03, 0x0f, 0x4f,
-    0x70, 0x65, 0x6e, 0x54, 0x68, 0x72, 0x65, 0x61,
-    0x64, 0x2d, 0x63, 0x36, 0x34, 0x65, 0x01, 0x02,
-    0xc6, 0x4e, 0x04, 0x10, 0x5e, 0x9b, 0x9b, 0x36,
-    0x0f, 0x80, 0xb8, 0x8b, 0xe2, 0x60, 0x3f, 0xb0,
-    0x13, 0x5c, 0x8d, 0x65, 0x0c, 0x04, 0x02, 0xa0,
-    0xf7, 0xf8])
 
 
 async def main():
@@ -83,62 +64,32 @@ async def main():
         await ble_sstream.do_handshake(hostname='DeviceType')
         print('Done')
 
+        cli = CLI(ble_sstream)
         loop = asyncio.get_running_loop()
         print('Enter \'help\' to see available commands')
         while True:
-            data = await loop.run_in_executor(None, sys.stdin.buffer.readline)
-            if data:
-                data = data.strip().decode(encoding='ascii')
-                if data == 'help':
-                    print('Available commands:')
-                    print('\tcommission - send dataset')
-                    print('\tthread on - enable thread')
-                    print('\tthread off - disable thread')
-                    print('\thello - send "hello world" application data')
-                    print('\texit - close the connection and exit')
-                elif data == 'commission':
-                    print('Commissioning')
-                    data = TcatTLV(TcatTLV.Type.ACTIVE_DATASET, dataset).to_bytes()
-                    await ble_sstream.send(data)
-                elif data == 'thread on':
-                    print('Enabling Thread')
-                    data = TcatTLV(TcatTLV.Type.COMMAND, TcatTLV.Command.COMMAND_THREAD_ON.to_bytes()).to_bytes()
-                    await ble_sstream.send(data)
-                    response = await ble_sstream.recv(4096, timeout=1)
-                    tlv_response = TcatTLV.from_bytes(response)
-                    print('thread on response:', tlv_response.type, tlv_response.data)
-                elif data == 'thread off':
-                    print('Disabling Thread')
-                    data = TcatTLV(TcatTLV.Type.COMMAND, TcatTLV.Command.COMMAND_THREAD_OFF.to_bytes()).to_bytes()
-                    await ble_sstream.send(data)
-                    response = await ble_sstream.recv(4096, timeout=1)
-                    tlv_response = TcatTLV.from_bytes(response)
-                    print('thread off response:', tlv_response.type, tlv_response.data)
-                elif data == 'hello':
-                    print('Sending hello world')
-                    data = TcatTLV(TcatTLV.Type.APPLICATION, bytes('hello_world', 'ascii')).to_bytes()
-                    await ble_sstream.send(data)
-                    response = await ble_sstream.recv(4096, timeout=1)
-                    tlv_response = TcatTLV.from_bytes(response)
-                    print('hello response:', tlv_response.type, tlv_response.data)
-                elif data == 'exit':
-                    print('Disconnecting...')
-                    break
-                elif data:
-                    print('Unknown command:', data)
-                    print('Enter \'help\' to see available commands')
+            user_input = await loop.run_in_executor(None, lambda: input('> '))
+            if user_input.lower() == 'exit':
+                print('Disconnecting...')
+                break
+            try:
+                result = await cli.evaluate_input(user_input)
+                if result:
+                    print('Result:', result)
+            except Exception as e:
+                print(e)
 
 
 async def get_device_by_args(args):
     device = None
     if args.mac:
-        device = await ble_util.find_first_by_mac(args.mac)
+        device = await ble_scanner.find_first_by_mac(args.mac)
     elif args.name:
-        device = await ble_util.find_first_by_name(args.name)
+        device = await ble_scanner.find_first_by_name(args.name)
     elif args.uuid:
-        device = await ble_util.find_first_by_service_uuid(args.uuid)
+        device = await ble_scanner.find_first_by_service_uuid(args.uuid)
     elif args.scan:
-        tcat_devices = await ble_util.scan_tcat_devices()
+        tcat_devices = await ble_scanner.scan_tcat_devices()
         print('Select the target:')
         for i, device in enumerate(tcat_devices):
             print(f'{i+1}: {device.name} - {device.address}')

@@ -44,4 +44,3 @@ async def scan_tcat_devices():
         if BBTC_SERVICE_UUID.lower() in adv_data.service_uuids:
             tcat_devices.append(device)
     return tcat_devices
-
