@@ -19,10 +19,12 @@ import argparse
 from os import path
 import logging
 
-from ble_stream import BleStream
-from ble_stream_secure import BleStreamSecure
-import ble_scanner
+from ble.ble_stream import BleStream
+from ble.ble_stream_secure import BleStreamSecure
+from ble import ble_scanner
 from cli import CLI
+from dataset.dataset import ThreadDataset
+
 
 BBTC_SERVICE_UUID = '6E400001-B5A3-F393-E0A9-E50E24DCCA9E'
 BBTC_TX_CHAR_UUID = '6E400003-B5A3-F393-E0A9-E50E24DCCA9E'
@@ -45,12 +47,13 @@ async def main():
         logging.getLogger('ble_stream').setLevel(logging.DEBUG)
         logging.getLogger('ble_stream_secure').setLevel(logging.DEBUG)
 
+    print('Finding device...')
     device = await get_device_by_args(args)
     if device is None:
         print('Device not found')
         exit(1)
 
-    print(f'Connecting to {device}...')
+    print(f'Connecting to {device}')
     async with await BleStream.create(device.address, BBTC_SERVICE_UUID, BBTC_TX_CHAR_UUID, BBTC_RX_CHAR_UUID) \
             as ble_stream:
         ble_sstream = BleStreamSecure(ble_stream)
@@ -64,7 +67,8 @@ async def main():
         await ble_sstream.do_handshake(hostname='DeviceType')
         print('Done')
 
-        cli = CLI(ble_sstream)
+        dataset = ThreadDataset()
+        cli = CLI(ble_sstream, dataset)
         loop = asyncio.get_running_loop()
         print('Enter \'help\' to see available commands')
         while True:

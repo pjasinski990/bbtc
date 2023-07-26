@@ -45,6 +45,10 @@ class TcatTLV:
         self.data = data
 
 
+    def __str__(self):
+        return f'TLV {self.type}: {self.data}'
+
+
     def to_bytes(self):
         has_long_header = len(self.data) >= 255
         header_len = 2

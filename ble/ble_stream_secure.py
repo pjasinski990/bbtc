@@ -17,7 +17,7 @@
 import asyncio
 import ssl
 
-from ble_stream import BleStream
+from .ble_stream import BleStream
 
 class BleStreamSecure:
     def __init__(self, ble_stream: BleStream):
@@ -93,3 +93,9 @@ class BleStreamSecure:
                     more = self.ble_stream.recv(buffersize)
                 self.incoming.write(more)
         return decode
+
+
+    async def send_with_resp(self, bytes):
+        await self.send(bytes)
+        res = await self.recv(4096, timeout=5)
+        return res

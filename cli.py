@@ -20,8 +20,8 @@ from commands import CliCommands
 
 
 class CLI:
-    def __init__(self, ble_sstream):
-        self._commands = CliCommands(ble_sstream)
+    def __init__(self, ble_sstream, dataset):
+        self._commands = CliCommands(ble_sstream, dataset)
         readline.set_completer(self.completer)
         readline.parse_and_bind('tab: complete')
 
@@ -35,6 +35,10 @@ class CLI:
 
 
     async def evaluate_input(self, user_input):
+        # do not parse empty commands
+        if not user_input.strip():
+            return
+
         command_parts = shlex.split(user_input)
         command = command_parts[0]
         args = command_parts[1:]
