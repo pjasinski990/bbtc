@@ -1,0 +1,37 @@
+matrix:
+- name: markdown
+  aspell:
+    lang: en
+  dictionary:
+    wordlists:
+    - config/.wordlist.txt
+    encoding: utf-8
+  pipeline:
+  - pyspelling.filters.markdown:
+      markdown_extensions:
+      - pymdownx.superfences
+  - pyspelling.filters.html:
+      comments: false
+      ignores:
+      - code
+      - pre
+  sources:
+  - '**/*.md'
+  default_encoding: utf-8
+- name: python
+  sources:
+  - '**/*.py'
+  aspell:
+    lang: en
+  dictionary:
+    wordlists:
+    - config/.wordlist.txt
+    encoding: utf-8
+  pipeline:
+  - pyspelling.filters.python:
+      comments: true
+      docstrings: true
+      group_comments: false
+      decode_escapes: true
+      strings: false
+      string_types: fu
