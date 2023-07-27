@@ -24,11 +24,11 @@ poetry run python3 bbtc.py {<device specifier> | --scan}
 where device specifier can be:
 - `--name <NAME>` - name advertised by the device
 - `--mac <ADDRESS>` - physical address of the device's Bluetooth interface
-- `--uuid <SERVICE_UUID>` - uuid of a service that is advertised by the device
+- `--uuid <SERVICE_UUID>` - UUID of a service that is advertised by the device
 
 Using `--scan` option will scan for every TCAT device and display them in a list, to allow selection of the target.
 
-For examle:
+For example:
 ```
 poetry run python3 bbtc.py --name 'Thread BLE'
 ```

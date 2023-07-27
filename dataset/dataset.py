@@ -33,15 +33,6 @@ dataset = bytes([
     0xf7, 0xf8])
 
 
-# dataset = bytearray.fromhex(
-#     '0e080000000000010000000300001235\
-#      060004001fffe00208ef1398c2fd504b\
-#      670708fd35344133d1d73e0510fda7c7\
-#      71a27202e232ecd04cf934f476030f4f\
-#      70656e5468726561642d633634650102\
-#      c64e04105e9b9b360f80b88be2603fb0\
-#      135c8d650c0402a0f7f8')
-
 class ThreadDataset:
     def __init__(self):
         self.active_timestamp = ActiveTimestamp()

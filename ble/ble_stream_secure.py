@@ -54,7 +54,7 @@ class BleStreamSecure:
                     await self.ble_stream.send(data)
                 await asyncio.sleep(0.1)
 
-            # SSLWantWrite means ssl wants to receive data from the link, but might need to send first
+            # SSLWantRead means ssl wants to receive data from the link, but might need to send first
             except ssl.SSLWantReadError:
                 data = self.outgoing.read()
                 if data:
