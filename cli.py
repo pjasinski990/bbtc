@@ -25,14 +25,12 @@ class CLI:
         readline.set_completer(self.completer)
         readline.parse_and_bind('tab: complete')
 
-
     def completer(self, text, state):
         options = [c for c in self._commands.command_map.keys() if c.startswith(text)]
         if state < len(options):
             return options[state]
         else:
             return None
-
 
     async def evaluate_input(self, user_input):
         # do not parse empty commands
