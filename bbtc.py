@@ -54,14 +54,15 @@ async def main():
         exit(1)
 
     print(f'Connecting to {device}')
-    async with await BleStream.create(device.address, BBTC_SERVICE_UUID, BBTC_TX_CHAR_UUID, BBTC_RX_CHAR_UUID) \
-            as ble_stream:
+    async with await BleStream.create(
+        device.address, BBTC_SERVICE_UUID, BBTC_TX_CHAR_UUID, BBTC_RX_CHAR_UUID
+    ) as ble_stream:
         ble_sstream = BleStreamSecure(ble_stream)
         ble_sstream.load_cert(
             certfile=path.join('auth', 'certificate.pem'),
             keyfile=path.join('auth', 'privatekey.pem'),
-            cafile=path.join('auth', 'ca_certificate.pem')
-            )
+            cafile=path.join('auth', 'ca_certificate.pem'),
+        )
 
         print('Setting up secure channel...')
         await ble_sstream.do_handshake(hostname='DeviceType')
@@ -98,7 +99,7 @@ async def get_device_by_args(args):
         for i, device in enumerate(tcat_devices):
             print(f'{i+1}: {device.name} - {device.address}')
         selected = get_int_in_range(1, len(tcat_devices))
-        device = tcat_devices[selected-1]
+        device = tcat_devices[selected - 1]
         print('Selected ', device)
     return device
 
@@ -110,9 +111,9 @@ def get_int_in_range(min_value, max_value):
             if min_value <= user_input <= max_value:
                 return user_input
             else:
-                print(f'The value is out of range. Try again.')
+                print('The value is out of range. Try again.')
         except ValueError:
-            print(f'The value is not an integer. Try again.')
+            print('The value is not an integer. Try again.')
 
 
 if __name__ == '__main__':

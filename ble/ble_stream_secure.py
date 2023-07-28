@@ -19,6 +19,7 @@ import ssl
 
 from .ble_stream import BleStream
 
+
 class BleStreamSecure:
     def __init__(self, ble_stream: BleStream):
         self.ble_stream = ble_stream
@@ -26,7 +27,6 @@ class BleStreamSecure:
         self.incoming = ssl.MemoryBIO()
         self.outgoing = ssl.MemoryBIO()
         self.ssl_object = None
-
 
     def load_cert(self, certfile='', keyfile='', cafile=''):
         if certfile and keyfile:
@@ -37,14 +37,19 @@ class BleStreamSecure:
         if cafile:
             self.ssl_context.load_verify_locations(cafile=cafile)
 
-
     async def do_handshake(self, hostname):
-        self.ssl_object = self.ssl_context.wrap_bio(incoming=self.incoming, outgoing=self.outgoing, server_side=False, server_hostname=hostname)
+        self.ssl_object = self.ssl_context.wrap_bio(
+            incoming=self.incoming,
+            outgoing=self.outgoing,
+            server_side=False,
+            server_hostname=hostname,
+        )
         while True:
             try:
                 self.ssl_object.do_handshake()
                 break
-            # SSLWantWrite means ssl wants to send data over the link, but might need a receive first
+            # SSLWantWrite means ssl wants to send data over the link,
+            # but might need a receive first
             except ssl.SSLWantWriteError:
                 output = self.ble_stream.recv(4096)
                 if output:
@@ -54,7 +59,8 @@ class BleStreamSecure:
                     await self.ble_stream.send(data)
                 await asyncio.sleep(0.1)
 
-            # SSLWantRead means ssl wants to receive data from the link, but might need to send first
+            # SSLWantRead means ssl wants to receive data from the link,
+            # but might need to send first
             except ssl.SSLWantReadError:
                 data = self.outgoing.read()
                 if data:
@@ -64,12 +70,10 @@ class BleStreamSecure:
                     self.incoming.write(output)
                 await asyncio.sleep(0.1)
 
-
     async def send(self, bytes):
         self.ssl_object.write(bytes)
         encode = self.outgoing.read(4096)
         await self.ble_stream.send(encode)
-
 
     async def recv(self, buffersize, timeout=0):
         end_time = asyncio.get_event_loop().time() + timeout
@@ -93,7 +97,6 @@ class BleStreamSecure:
                     more = self.ble_stream.recv(buffersize)
                 self.incoming.write(more)
         return decode
-
 
     async def send_with_resp(self, bytes):
         await self.send(bytes)

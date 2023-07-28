@@ -17,6 +17,7 @@
 from dataset import dataset
 from tcat_tlv import TcatTLV
 
+
 class CliCommands:
     def __init__(self, ble_sstream, dataset):
         self._ble_sstream = ble_sstream
@@ -26,9 +27,8 @@ class CliCommands:
             'commission': self.commission,
             'thread': self.thread_state_update,
             'hello': self.say_hello,
-            'dataset': self.dataset
+            'dataset': self.dataset,
         }
-
 
     async def help(self, args=[]):
         print('Available commands:')
@@ -39,13 +39,11 @@ class CliCommands:
         print('\texit - close the connection and exit')
         print('\tdataset - display and manipulate Thread dataset')
 
-
     async def commission(self, args=[]):
         print('Commissioning...')
         data = TcatTLV(TcatTLV.Type.ACTIVE_DATASET, dataset.dataset).to_bytes()
         await self._ble_sstream.send(data)
         print('Done')
-
 
     async def thread_state_update(self, args=[]):
         if not args[0] or args[0] not in ('on', 'off'):
@@ -55,16 +53,19 @@ class CliCommands:
         tlv_response = None
         if args[0] == 'on':
             print('Enabling Thread')
-            data = TcatTLV(TcatTLV.Type.COMMAND, TcatTLV.Command.COMMAND_THREAD_ON.to_bytes()).to_bytes()
+            data = TcatTLV(
+                TcatTLV.Type.COMMAND, TcatTLV.Command.COMMAND_THREAD_ON.to_bytes()
+            ).to_bytes()
             response = await self._ble_sstream.send_with_resp(data)
             tlv_response = TcatTLV.from_bytes(response)
         elif args[0] == 'off':
             print('Disabling Thread')
-            data = TcatTLV(TcatTLV.Type.COMMAND, TcatTLV.Command.COMMAND_THREAD_OFF.to_bytes()).to_bytes()
+            data = TcatTLV(
+                TcatTLV.Type.COMMAND, TcatTLV.Command.COMMAND_THREAD_OFF.to_bytes()
+            ).to_bytes()
             response = await self._ble_sstream.send_with_resp(data)
             tlv_response = TcatTLV.from_bytes(response)
         return tlv_response
-
 
     async def say_hello(self, args=[]):
         print('Sending hello world')
@@ -72,7 +73,6 @@ class CliCommands:
         response = await self._ble_sstream.send_with_resp(data)
         tlv_response = TcatTLV.from_bytes(response)
         return tlv_response
-
 
     async def dataset(self, args=[]):
         print('Current dataset:')
