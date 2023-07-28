@@ -9,14 +9,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: set up python
+      - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.x'
-      - name: install dependencies
+      - name: install Poetry
         run: |
-          python3 -m pip install --upgrade pip
-          pip install -r requirements.txt
+          curl -sSL https://install.python-poetry.org | python3 -
+      - name: Install dependencies
+        run: |
+          poetry install
       - name: run tests
-        run: python3 -m unittest discover
+        run: |
+          poetry run pytest tests
 
