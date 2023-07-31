@@ -61,6 +61,13 @@ class MeshcopTlvType(Enum):
     DISCOVERYRESPONSE = 129
     JOINERADVERTISEMENT = 241
 
+    @classmethod
+    def from_value(cls, value: int):
+        return cls._value2member_map_.get(value)
+
+    def to_bytes(self):
+        return bytes([self.value])
+
 
 class DatasetEntry(ABC):
     def __init__(self, type: MeshcopTlvType):

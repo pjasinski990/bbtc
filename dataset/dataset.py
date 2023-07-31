@@ -14,7 +14,9 @@
    limitations under the License.
 """
 
-from .dataset_types import (
+from tlv.tlv import TLV
+
+from .dataset_tlv import (
     DatasetEntry,
     ActiveTimestamp,
     PendingTimestamp,
@@ -66,11 +68,6 @@ class ThreadDataset:
         self.secpolicy = SecurityPolicy()
         self.channel_mask = ChannelMask()
 
-    def get_entries(self):
-        fields = vars(self).values()
-        entries = [field for field in fields if isinstance(field, DatasetEntry)]
-        return entries
-
     def __str__(self) -> str:
         res = ''
         width = 20
@@ -79,6 +76,17 @@ class ThreadDataset:
             res += f'{entry.type.name}{" " * (width - typelen)} - {entry}\n'
         res = res[:-1]
         return res
+
+    def set_from_bytes(bytes):
+        pass
+        tlvs = TLV.parse_tlvs(bytes)
+        for tlv in tlvs:
+            pass
+
+    def get_entries(self):
+        fields = vars(self).values()
+        entries = [field for field in fields if isinstance(field, DatasetEntry)]
+        return entries
 
     def to_tlvs_hexstring(self):
         fields = vars(self).values()
