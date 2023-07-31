@@ -15,7 +15,8 @@
 """
 
 from dataset import dataset
-from tcat_tlv import TcatTLV
+from tlv.tlv import TLV
+from tlv.tcat_tlv import TcatTLVType, TcatCommand
 
 
 class CliCommands:
@@ -41,7 +42,7 @@ class CliCommands:
 
     async def commission(self, args=[]):
         print('Commissioning...')
-        data = TcatTLV(TcatTLV.Type.ACTIVE_DATASET, dataset.dataset).to_bytes()
+        data = TLV(TcatTLVType.ACTIVE_DATASET.value, dataset.dataset).to_bytes()
         await self._ble_sstream.send(data)
         print('Done')
 
@@ -53,25 +54,29 @@ class CliCommands:
         tlv_response = None
         if args[0] == 'on':
             print('Enabling Thread')
-            data = TcatTLV(
-                TcatTLV.Type.COMMAND, TcatTLV.Command.COMMAND_THREAD_ON.to_bytes()
+            data = TLV(
+                TcatTLVType.COMMAND.value, TcatCommand.COMMAND_THREAD_ON.to_bytes()
             ).to_bytes()
             response = await self._ble_sstream.send_with_resp(data)
-            tlv_response = TcatTLV.from_bytes(response)
+            tlv_response = TLV.from_bytes(response)
         elif args[0] == 'off':
             print('Disabling Thread')
-            data = TcatTLV(
-                TcatTLV.Type.COMMAND, TcatTLV.Command.COMMAND_THREAD_OFF.to_bytes()
+            data = TLV(
+                TcatTLVType.COMMAND.value, TcatCommand.COMMAND_THREAD_OFF.to_bytes()
             ).to_bytes()
             response = await self._ble_sstream.send_with_resp(data)
-            tlv_response = TcatTLV.from_bytes(response)
+            tlv_response = TLV.from_bytes(response)
         return tlv_response
 
     async def say_hello(self, args=[]):
         print('Sending hello world')
-        data = TcatTLV(TcatTLV.Type.APPLICATION, bytes('hello_world', 'ascii')).to_bytes()
+        data = TLV(
+            TcatTLVType.APPLICATION.value,
+            bytes(
+                'hello_world',
+                'ascii')).to_bytes()
         response = await self._ble_sstream.send_with_resp(data)
-        tlv_response = TcatTLV.from_bytes(response)
+        tlv_response = TLV.from_bytes(response)
         return tlv_response
 
     async def dataset(self, args=[]):
