@@ -1,0 +1,47 @@
+name: check code
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  check_license_headers:
+    name: check license headers
+    runs-on: ubuntu-22.04
+    steps:
+    - name: check out code
+      uses: actions/checkout@v3
+    - name: set up python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: check license headers
+      run: python3 config/check_license.py
+
+  python_lint:
+    name: python lint
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: set up python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install flake8
+      - name: lint with flake8
+        run: |
+          flake8 --show-source --statistics
+
+  spellcheck:
+    name: check spelling
+    runs-on: ubuntu-22.04
+    steps:
+      - name: check out code
+        uses: actions/checkout@v3
+      - name: spellcheck
+        uses: rojopolis/spellcheck-github-actions@0.33.1
+        with:
+          config_path: 'config/.spellcheck.yml'
