@@ -51,8 +51,7 @@ async def main():
     print('Finding device...')
     device = await get_device_by_args(args)
     if device is None:
-        print('Device not found')
-        exit(1)
+        quit_with_reason('Device not found')
 
     print(f'Connecting to {device}')
     async with await BleStream.create(
@@ -96,9 +95,13 @@ async def get_device_by_args(args):
         device = await ble_scanner.find_first_by_service_uuid(args.uuid)
     elif args.scan:
         tcat_devices = await ble_scanner.scan_tcat_devices()
-        print('Select the target:')
-        for i, device in enumerate(tcat_devices):
-            print(f'{i+1}: {device.name} - {device.address}')
+        if tcat_devices:
+            print('Found devices:\n')
+            for i, device in enumerate(tcat_devices):
+                print(f'{i+1}: {device.name} - {device.address}')
+        else:
+            quit_with_reason('No devices found.')
+        print('\nSelect the target number to connect to it.')
         selected = get_int_in_range(1, len(tcat_devices))
         device = tcat_devices[selected - 1]
         print('Selected ', device)
@@ -108,13 +111,20 @@ async def get_device_by_args(args):
 def get_int_in_range(min_value, max_value):
     while True:
         try:
-            user_input = int(input())
+            user_input = int(input('>'))
             if min_value <= user_input <= max_value:
                 return user_input
             else:
                 print('The value is out of range. Try again.')
         except ValueError:
             print('The value is not an integer. Try again.')
+        except KeyboardInterrupt:
+            quit_with_reason('Program interrupted by user. Quitting.')
+
+
+def quit_with_reason(reason):
+    print(reason)
+    exit(1)
 
 
 if __name__ == '__main__':
