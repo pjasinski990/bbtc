@@ -59,13 +59,13 @@ async def main():
     ) as ble_stream:
         ble_sstream = BleStreamSecure(ble_stream)
         ble_sstream.load_cert(
-            certfile=path.join('auth', 'certificate.pem'),
-            keyfile=path.join('auth', 'privatekey.pem'),
-            cafile=path.join('auth', 'ca_certificate.pem'),
+            certfile=path.join('auth', 'commissioner_cert.pem'),
+            keyfile=path.join('auth', 'commissioner_key.pem'),
+            cafile=path.join('auth', 'ca_cert.pem'),
         )
 
         print('Setting up secure channel...')
-        await ble_sstream.do_handshake(hostname='DeviceType')
+        await ble_sstream.do_handshake(hostname='UnlimitedAccess')
         print('Done')
 
         dataset = ThreadDataset()
