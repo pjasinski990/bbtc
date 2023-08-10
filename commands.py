@@ -16,7 +16,7 @@
 
 from dataset import dataset
 from tlv.tlv import TLV
-from tlv.tcat_tlv import TcatTLVType, TcatCommand
+from tlv.tcat_tlv import TcatTLVType
 
 
 class CliCommands:
@@ -43,7 +43,9 @@ class CliCommands:
     async def commission(self, args=[]):
         print('Commissioning...')
         data = TLV(TcatTLVType.ACTIVE_DATASET.value, dataset.dataset).to_bytes()
-        await self._ble_sstream.send(data)
+        response = await self._ble_sstream.send_with_resp(data)
+        tlv_response = TLV.from_bytes(response)
+        return tlv_response
         print('Done')
 
     async def thread_state_update(self, args=[]):
@@ -55,14 +57,14 @@ class CliCommands:
         if args[0] == 'on':
             print('Enabling Thread')
             data = TLV(
-                TcatTLVType.COMMAND.value, TcatCommand.COMMAND_THREAD_ON.to_bytes()
+                TcatTLVType.THREAD_START.value, bytes()
             ).to_bytes()
             response = await self._ble_sstream.send_with_resp(data)
             tlv_response = TLV.from_bytes(response)
         elif args[0] == 'off':
             print('Disabling Thread')
             data = TLV(
-                TcatTLVType.COMMAND.value, TcatCommand.COMMAND_THREAD_OFF.to_bytes()
+                TcatTLVType.THREAD_STOP.value, bytes()
             ).to_bytes()
             response = await self._ble_sstream.send_with_resp(data)
             tlv_response = TLV.from_bytes(response)

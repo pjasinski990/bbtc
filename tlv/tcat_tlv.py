@@ -18,22 +18,13 @@ from enum import Enum
 
 
 class TcatTLVType(Enum):
-    COMMAND = 0x00
-    RESPONSE = 0x01
-    ACTIVE_DATASET = 0x10
-    APPLICATION = 0x12
-
-    @classmethod
-    def from_value(cls, value: int):
-        return cls._value2member_map_.get(value)
-
-    def to_bytes(self):
-        return bytes([self.value])
-
-
-class TcatCommand(Enum):
-    COMMAND_THREAD_ON = 0x01
-    COMMAND_THREAD_OFF = 0x02
+    RESPONSE_W_STATUS = 0x01
+    RESPONSE_W_PAYLOAD = 0x02
+    ACTIVE_DATASET = 0x20
+    DECOMMISSION = 0x60
+    APPLICATION = 0x82
+    THREAD_START = 0x27
+    THREAD_STOP = 0x28
 
     @classmethod
     def from_value(cls, value: int):
