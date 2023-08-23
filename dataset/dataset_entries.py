@@ -15,6 +15,7 @@
 """
 
 import struct
+import inspect
 from typing import List
 from abc import ABC, abstractmethod
 
@@ -26,8 +27,17 @@ class DatasetEntry(ABC):
     def __init__(self, type: MeshcopTlvType):
         self.type = type
         self.used = False
-        self._length = None
-        self._maxlen = None
+        self.length = None
+        self.maxlen = None
+
+    def print_content(self, indent: int = 0, excluded_fields: List[str] = []):
+        excluded_fields += ['length', 'maxlen', 'used', 'type']
+        indentation = " " * 4 * indent
+        for attr_name in dir(self):
+            if not attr_name.startswith('_') and attr_name not in excluded_fields:
+                value = getattr(self, attr_name)
+                if not inspect.ismethod(value):
+                    print(f'{indentation}{attr_name}: {value}')
 
     @abstractmethod
     def to_tlv(self) -> TLV:
@@ -49,23 +59,23 @@ class DatasetEntry(ABC):
 class ActiveTimestamp(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.ACTIVETIMESTAMP)
-        self._length = 8  # spec defined
-        self._seconds = 0
-        self._ubit = 0
-        self._ticks = 0
+        self.length = 8  # spec defined
+        self.seconds = 0
+        self.ubit = 0
+        self.ticks = 0
 
     def set(self, args: List[str]):
         pass
 
     def set_from_tlv(self, tlv: TLV):
         (value,) = struct.unpack('>Q', tlv.value)
-        self._ubit = value & 0x1
-        self._ticks = (value >> 1) & 0x7FFF
-        self._seconds = (value >> 16) & 0xFFFF
+        self.ubit = value & 0x1
+        self.ticks = (value >> 1) & 0x7FFF
+        self.seconds = (value >> 16) & 0xFFFF
 
     def to_tlv(self):
-        value = (self._seconds << 16) | (self._ticks << 1) | self._ubit
-        tlv = struct.pack('>BBQ', self.type.value, self._length, value)
+        value = (self.seconds << 16) | (self.ticks << 1) | self.ubit
+        tlv = struct.pack('>BBQ', self.type.value, self.length, value)
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
@@ -75,23 +85,23 @@ class ActiveTimestamp(DatasetEntry):
 class PendingTimestamp(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.PENDINGTIMESTAMP)
-        self._length = 8  # spec defined
-        self._seconds = 0
-        self._ubit = 0
-        self._ticks = 0
+        self.length = 8  # spec defined
+        self.seconds = 0
+        self.ubit = 0
+        self.ticks = 0
 
     def set(self, args: List[str]):
         pass
 
     def set_from_tlv(self, tlv: TLV):
         (value,) = struct.unpack('>Q', tlv.value)
-        self._ubit = value & 0x1
-        self._ticks = (value >> 1) & 0x7FFF
-        self._seconds = (value >> 16) & 0xFFFF
+        self.ubit = value & 0x1
+        self.ticks = (value >> 1) & 0x7FFF
+        self.seconds = (value >> 16) & 0xFFFF
 
     def to_tlv(self):
-        value = (self._seconds << 16) | (self._ticks << 1) | self._ubit
-        tlv = struct.pack('>BBQ', self.type.value, self._length, value)
+        value = (self.seconds << 16) | (self.ticks << 1) | self.ubit
+        tlv = struct.pack('>BBQ', self.type.value, self.length, value)
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
@@ -101,25 +111,25 @@ class PendingTimestamp(DatasetEntry):
 class NetworkKey(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.NETWORKKEY)
-        self._length = 16  # spec defined
-        self._data = ''
+        self.length = 16  # spec defined
+        self.data = ''
 
     def set(self, args: List[str]):
         nk = args[0]
         if not nk:
             raise ValueError('Invalid networkkey format')
-        if len(nk) != self._length * 2:  # need length * 2 hex characters
+        if len(nk) != self.length * 2:  # need length * 2 hex characters
             raise ValueError('Invalid length of networkkey')
-        self._data = nk
+        self.data = nk
 
     def set_from_tlv(self, tlv: TLV):
-        self._data = tlv.value.hex()
+        self.data = tlv.value.hex()
 
     def to_tlv(self):
-        if len(self._data) != self._length * 2:  # need length * 2 hex characters
+        if len(self.data) != self.length * 2:  # need length * 2 hex characters
             raise ValueError('Invalid length of networkkey')
-        value = bytes.fromhex(self._data)
-        tlv = struct.pack('>BB', self.type.value, self._length) + value
+        value = bytes.fromhex(self.data)
+        tlv = struct.pack('>BB', self.type.value, self.length) + value
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
@@ -129,18 +139,18 @@ class NetworkKey(DatasetEntry):
 class NetworkName(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.NETWORKNAME)
-        self._max_length = 16
-        self._data = ''
+        self.maxlen = 16
+        self.data = ''
 
     def set(self, args: List[str]):
         pass
 
     def set_from_tlv(self, tlv: TLV):
-        self._data = tlv.value.decode('utf-8')
+        self.data = tlv.value.decode('utf-8')
 
     def to_tlv(self):
-        length_value = len(self._data)
-        value = self._data.encode('utf-8')
+        length_value = len(self.data)
+        value = self.data.encode('utf-8')
         tlv = struct.pack('>BB', self.type.value, length_value) + value
         return TLV.from_bytes(tlv)
 
@@ -151,21 +161,21 @@ class NetworkName(DatasetEntry):
 class ExtPanID(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.EXTPANID)
-        self._length = 8  # spec defined
-        self._data = ''
+        self.length = 8  # spec defined
+        self.data = ''
 
     def set(self, args: List[str]):
         pass
 
     def set_from_tlv(self, tlv: TLV):
-        self._data = tlv.value.hex()
+        self.data = tlv.value.hex()
 
     def to_tlv(self):
-        if len(self._data) != self._length * 2:  # need length*2 hex characters
+        if len(self.data) != self.length * 2:  # need length*2 hex characters
             raise ValueError('Invalid length of ExtPanID')
 
-        value = bytes.fromhex(self._data)
-        tlv = struct.pack('>BB', self.type.value, self._length) + value
+        value = bytes.fromhex(self.data)
+        tlv = struct.pack('>BB', self.type.value, self.length) + value
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
@@ -175,21 +185,21 @@ class ExtPanID(DatasetEntry):
 class MeshLocalPrefix(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.MESHLOCALPREFIX)
-        self._length = 8  # spec defined
-        self._data = ''
+        self.length = 8  # spec defined
+        self.data = ''
 
     def set(self, args: List[str]):
         pass
 
     def set_from_tlv(self, tlv: TLV):
-        self._data = tlv.value.hex()
+        self.data = tlv.value.hex()
 
     def to_tlv(self):
-        if len(self._data) != self._length * 2:  # need length*2 hex characters
+        if len(self.data) != self.length * 2:  # need length*2 hex characters
             raise ValueError('Invalid length of MeshLocalPrefix')
 
-        value = bytes.fromhex(self._data)
-        tlv = struct.pack('>BB', self.type.value, self._length) + value
+        value = bytes.fromhex(self.data)
+        tlv = struct.pack('>BB', self.type.value, self.length) + value
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
@@ -199,18 +209,18 @@ class MeshLocalPrefix(DatasetEntry):
 class DelayTimer(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.DELAYTIMER)
-        self._length = 4  # spec defined
-        self._time_remaining = 0
+        self.length = 4  # spec defined
+        self.time_remaining = 0
 
     def set(self, args: List[str]):
         pass
 
     def set_from_tlv(self, tlv: TLV):
-        self._time_remaining = tlv.value
+        self.time_remaining = tlv.value
 
     def to_tlv(self):
-        value = self._time_remaining
-        tlv = struct.pack('>BBI', self.type.value, self._length, value)
+        value = self.time_remaining
+        tlv = struct.pack('>BBI', self.type.value, self.length, value)
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
@@ -220,21 +230,21 @@ class DelayTimer(DatasetEntry):
 class PanID(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.PANID)
-        self._length = 2  # spec defined
-        self._data = ''
+        self.length = 2  # spec defined
+        self.data = ''
 
     def set(self, args: List[str]):
         pass
 
     def set_from_tlv(self, tlv: TLV):
-        self._data = tlv.value.hex()
+        self.data = tlv.value.hex()
 
     def to_tlv(self):
-        if len(self._data) != self._length * 2:  # need length*2 hex characters
+        if len(self.data) != self.length * 2:  # need length*2 hex characters
             raise ValueError('Invalid length of PanID')
 
-        value = bytes.fromhex(self._data)
-        tlv = struct.pack('>BB', self.type.value, self._length) + value
+        value = bytes.fromhex(self.data)
+        tlv = struct.pack('>BB', self.type.value, self.length) + value
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
@@ -244,21 +254,20 @@ class PanID(DatasetEntry):
 class Channel(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.CHANNEL)
-        self._length = 3  # spec defined
-        self._channel_page = 0
-        self._channel = 0
+        self.length = 3  # spec defined
+        self.channel_page = 0
+        self.channel = 0
 
     def set(self, args: List[str]):
         pass
 
     def set_from_tlv(self, tlv: TLV):
-        # TODO this needs to be verified
-        self._channel = int.from_bytes(tlv.value[1:3], byteorder='big')
-        self._channel_page = tlv.value[0]
+        self.channel = int.from_bytes(tlv.value[1:3], byteorder='big')
+        self.channel_page = tlv.value[0]
 
     def to_tlv(self):
-        tlv = struct.pack('>BBB', self.type.value, self._length, self._channel_page)
-        tlv += struct.pack('>H', self._channel)
+        tlv = struct.pack('>BBB', self.type.value, self.length, self.channel_page)
+        tlv += struct.pack('>H', self.channel)
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
@@ -268,23 +277,23 @@ class Channel(DatasetEntry):
 class Pskc(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.PSKC)
-        self._max_length = 16
-        self._data = ''
+        self.maxlen = 16
+        self.data = ''
 
     def set(self, args: List[str]):
         pass
 
     def set_from_tlv(self, tlv: TLV):
-        self._data = tlv.value.hex()
+        self.data = tlv.value.hex()
 
     def to_tlv(self):
         if (
-            len(self._data) > self._max_length * 2
+            len(self.data) > self.maxlen * 2
         ):  # should not exceed max length*2 hex characters
             raise ValueError('Invalid length of Pskc')
 
-        length_value = len(self._data) // 2
-        value = bytes.fromhex(self._data)
+        length_value = len(self.data) // 2
+        value = bytes.fromhex(self.data)
         tlv = struct.pack('>BB', self.type.value, length_value) + value
         return TLV.from_bytes(tlv)
 
@@ -295,20 +304,20 @@ class Pskc(DatasetEntry):
 class SecurityPolicy(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.SECURITYPOLICY)
-        self._length = 4  # spec defined
-        self._rotation_time = 0
-        self._out_of_band = 0  # O
-        self._native = 0  # N
-        self._routers_1_2 = 0  # R
-        self._external_commissioners = 0  # C
-        self._reserved = 0  # B
-        self._commercial_commissioning_off = 0  # CCM
-        self._autonomous_enrollment_off = 0  # AE
-        self._networkkey_provisioning_off = 0  # NP
-        self._thread_over_ble = 0  # L
-        self._non_ccm_routers_off = 0  # NCR
-        self._rsv = 0b111  # Rsv
-        self._version_threshold_for_routing = 0  # VR
+        self.length = 4  # spec defined
+        self.rotation_time = 0
+        self.out_of_band = 0  # O
+        self.native = 0  # N
+        self.routers_1_2 = 0  # R
+        self.external_commissioners = 0  # C
+        self.reserved = 0  # B
+        self.commercial_commissioning_off = 0  # CCM
+        self.autonomous_enrollment_off = 0  # AE
+        self.networkkey_provisioning_off = 0  # NP
+        self.thread_over_ble = 0  # L
+        self.non_ccm_routers_off = 0  # NCR
+        self.rsv = 0b111  # Rsv
+        self.version_threshold_for_routing = 0  # VR
 
     def set(self, args: List[str]):
         pass
@@ -316,35 +325,35 @@ class SecurityPolicy(DatasetEntry):
     def set_from_tlv(self, tlv: TLV):
         value = int.from_bytes(tlv.value, byteorder='big')
 
-        self._rotation_time = (value >> 16) & 0xFFFF
-        self._out_of_band = (value >> 15) & 0x1
-        self._native = (value >> 14) & 0x1
-        self._routers_1_2 = (value >> 13) & 0x1
-        self._external_commissioners = (value >> 12) & 0x1
-        self._reserved = (value >> 11) & 0x1
-        self._commercial_commissioning_off = (value >> 10) & 0x1
-        self._autonomous_enrollment_off = (value >> 9) & 0x1
-        self._networkkey_provisioning_off = (value >> 8) & 0x1
-        self._thread_over_ble = (value >> 7) & 0x1
-        self._non_ccm_routers_off = (value >> 6) & 0x1
-        self._rsv = (value >> 3) & 0x7
-        self._version_threshold_for_routing = value & 0x7
+        self.rotation_time = (value >> 16) & 0xFFFF
+        self.out_of_band = (value >> 15) & 0x1
+        self.native = (value >> 14) & 0x1
+        self.routers_1_2 = (value >> 13) & 0x1
+        self.external_commissioners = (value >> 12) & 0x1
+        self.reserved = (value >> 11) & 0x1
+        self.commercial_commissioning_off = (value >> 10) & 0x1
+        self.autonomous_enrollment_off = (value >> 9) & 0x1
+        self.networkkey_provisioning_off = (value >> 8) & 0x1
+        self.thread_over_ble = (value >> 7) & 0x1
+        self.non_ccm_routers_off = (value >> 6) & 0x1
+        self.rsv = (value >> 3) & 0x7
+        self.version_threshold_for_routing = value & 0x7
 
     def to_tlv(self):
-        value = self._rotation_time << 16
-        value |= self._out_of_band << 15
-        value |= self._native << 14
-        value |= self._routers_1_2 << 13
-        value |= self._external_commissioners << 12
-        value |= self._reserved << 11
-        value |= self._commercial_commissioning_off << 10
-        value |= self._autonomous_enrollment_off << 9
-        value |= self._networkkey_provisioning_off << 8
-        value |= self._thread_over_ble << 7
-        value |= self._non_ccm_routers_off << 6
-        value |= self._rsv << 3
-        value |= self._version_threshold_for_routing
-        tlv = struct.pack('>BBI', 1, self._length, value)
+        value = self.rotation_time << 16
+        value |= self.out_of_band << 15
+        value |= self.native << 14
+        value |= self.routers_1_2 << 13
+        value |= self.external_commissioners << 12
+        value |= self.reserved << 11
+        value |= self.commercial_commissioning_off << 10
+        value |= self.autonomous_enrollment_off << 9
+        value |= self.networkkey_provisioning_off << 8
+        value |= self.thread_over_ble << 7
+        value |= self.non_ccm_routers_off << 6
+        value |= self.rsv << 3
+        value |= self.version_threshold_for_routing
+        tlv = struct.pack('>BBI', 1, self.length, value)
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
@@ -354,20 +363,28 @@ class SecurityPolicy(DatasetEntry):
 class ChannelMask(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.CHANNELMASK)
-        self._entries: List[ChannelMaskEntry] = []
+        self.entries: List[ChannelMaskEntry] = []
 
     def set(self, args: List[str]):
         pass
 
+    def print_content(self, indent: int = 0):
+        super().print_content(indent=indent, excluded_fields=['entries'])
+        indentation = " " * 4 * indent
+        for i, entry in enumerate(self.entries):
+            print(f'{indentation}ChannelMaskEntry {i}')
+            entry.print_content(indent=indent + 1)
+
     def set_from_tlv(self, tlv: TLV):
-        self._entries = []
+        self.entries = []
         for mask_entry_tlv in TLV.parse_tlvs(tlv.value):
             new_entry = ChannelMaskEntry()
             new_entry.set_from_tlv(mask_entry_tlv)
-            self._entries.append(new_entry)
+            self.entries.append(new_entry)
 
     def to_tlv(self):
-        tlv_value = b''.join(mask_entry.to_tlv().to_bytes() for mask_entry in self._entries)
+        tlv_value = b''.join(mask_entry.to_tlv().to_bytes()
+                             for mask_entry in self.entries)
         tlv = struct.pack('>BB', self.type.value, len(tlv_value)) + tlv_value
         return TLV.from_bytes(tlv)
 
@@ -377,27 +394,27 @@ class ChannelMask(DatasetEntry):
 
 class ChannelMaskEntry(DatasetEntry):
     def __init__(self):
-        self._channel_page = 0
-        self._mask_length = 0
-        self._channel_mask: bytes = None
+        self.channel_page = 0
+        self.mask_length = 0
+        self.channel_mask: bytes = None
 
     def set(self, args: List[str]):
         pass
 
     def set_from_tlv(self, tlv: TLV):
-        self._channel_page = tlv.type
-        self._mask_length = len(tlv.value)
-        self._channel_mask = tlv.value
+        self.channel_page = tlv.type
+        self.mask_length = len(tlv.value)
+        self.channel_mask = tlv.value
 
     def to_tlv(self):
-        tlv = struct.pack('>BB', self._channel_page, self._mask_length) + self._channel_mask
+        tlv = struct.pack('>BB', self.channel_page, self.mask_length) + self.channel_mask
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
         pass
 
 
-def create_dataset_entry(type: MeshcopTlvType, args = None):
+def create_dataset_entry(type: MeshcopTlvType, args=None):
     entry_classes = {
         MeshcopTlvType.ACTIVETIMESTAMP: ActiveTimestamp,
         MeshcopTlvType.PENDINGTIMESTAMP: PendingTimestamp,
@@ -421,6 +438,3 @@ def create_dataset_entry(type: MeshcopTlvType, args = None):
     if args:
         res.set(args)
     return res
-
-# config_instance = create_dataset_entry(MeshcopTlvType.CHANNEL)
-# print(type(config_instance))

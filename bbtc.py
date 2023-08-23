@@ -77,12 +77,12 @@ async def main():
             if user_input.lower() == 'exit':
                 print('Disconnecting...')
                 break
-            # try:
-            result = await cli.evaluate_input(user_input)
-            if result:
-                print('Result:', result)
-            # except Exception as e:
-            #     print(e)
+            try:
+                result = await cli.evaluate_input(user_input)
+                if result:
+                    print('Result:', result)
+            except Exception as e:
+                print(e)
 
 
 async def get_device_by_args(args):
