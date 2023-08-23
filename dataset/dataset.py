@@ -18,22 +18,7 @@ from typing import Dict, List
 
 from tlv.tlv import TLV
 from tlv.dataset_tlv import MeshcopTlvType
-from dataset.dataset_entries import (
-    DatasetEntry,
-    create_dataset_entry,
-    ActiveTimestamp,
-    PendingTimestamp,
-    NetworkKey,
-    NetworkName,
-    ExtPanID,
-    MeshLocalPrefix,
-    DelayTimer,
-    PanID,
-    Channel,
-    Pskc,
-    SecurityPolicy,
-    ChannelMask,
-)
+from dataset.dataset_entries import DatasetEntry, create_dataset_entry
 
 
 initial_dataset = bytes(
@@ -61,14 +46,11 @@ class ThreadDataset:
         self.entries: Dict[MeshcopTlvType, DatasetEntry] = {}
         self.set_from_bytes(initial_dataset)
 
-    def __str__(self) -> str:
-        res = ''
-        width = 20
-        for entry in self.entries:
-            typelen = len(entry.type.name)
-            res += f'{entry.type.name}{" " * (width - typelen)} - {entry}\n'
-        res = res[:-1]
-        return res
+    def print_content(self):
+        for type, entry in self.entries.items():
+            print(f'{type.name}:')
+            entry.print_content(indent=1)
+            print()
 
     def set_from_bytes(self, bytes):
         for tlv in TLV.parse_tlvs(bytes):

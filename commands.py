@@ -84,4 +84,4 @@ class CliCommands:
 
     async def dataset(self, args=[]):
         print('Current dataset:')
-        print(self._dataset)
+        self._dataset.print_content()
