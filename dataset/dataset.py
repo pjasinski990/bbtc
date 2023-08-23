@@ -14,10 +14,13 @@
    limitations under the License.
 """
 
-from tlv.tlv import TLV
+from typing import Dict, List
 
-from .dataset_tlv import (
+from tlv.tlv import TLV
+from tlv.dataset_tlv import MeshcopTlvType
+from dataset.dataset_entries import (
     DatasetEntry,
+    create_dataset_entry,
     ActiveTimestamp,
     PendingTimestamp,
     NetworkKey,
@@ -33,7 +36,7 @@ from .dataset_tlv import (
 )
 
 
-dataset = bytes(
+initial_dataset = bytes(
     [
         0x0E, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
         0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x12, 0x35,
@@ -55,41 +58,35 @@ dataset = bytes(
 
 class ThreadDataset:
     def __init__(self):
-        self.active_timestamp = ActiveTimestamp()
-        self.pending_timestamp = PendingTimestamp()
-        self.networkkey = NetworkKey()
-        self.networkname = NetworkName()
-        self.extpanid = ExtPanID()
-        self.mlprefix = MeshLocalPrefix()
-        self.delay_timer = DelayTimer()
-        self.panid = PanID()
-        self.channel = Channel()
-        self.pskc = Pskc()
-        self.secpolicy = SecurityPolicy()
-        self.channel_mask = ChannelMask()
+        self.entries: Dict[MeshcopTlvType, DatasetEntry] = {}
+        self.set_from_bytes(initial_dataset)
 
     def __str__(self) -> str:
         res = ''
         width = 20
-        for entry in self.get_entries():
+        for entry in self.entries:
             typelen = len(entry.type.name)
             res += f'{entry.type.name}{" " * (width - typelen)} - {entry}\n'
         res = res[:-1]
         return res
 
-    def set_from_bytes(bytes):
-        pass
-        tlvs = TLV.parse_tlvs(bytes)
-        for tlv in tlvs:
-            pass
+    def set_from_bytes(self, bytes):
+        for tlv in TLV.parse_tlvs(bytes):
+            type = MeshcopTlvType.from_value(tlv.type)
+            self.entries[type] = create_dataset_entry(type)
+            self.entries[type].set_from_tlv(tlv)
 
-    def get_entries(self):
-        fields = vars(self).values()
-        entries = [field for field in fields if isinstance(field, DatasetEntry)]
-        return entries
+    def to_bytes(self):
+        res = bytes()
+        for entry in self.entries.values():
+            print('in', entry.type)
+            res += entry.to_tlv().to_bytes()
+        return res
 
-    def to_tlvs_hexstring(self):
-        fields = vars(self).values()
-        tlvs = [field for field in fields if isinstance(field, DatasetEntry)]
-        for tlv in tlvs:
-            print(tlv.type)
+    def get_entry(self, type: MeshcopTlvType):
+        return self.entries[type]
+
+    def set_entry(self, type: MeshcopTlvType, args: List[str]):
+        if type in self.entries:
+            self.entries[type].set(args)
+            return

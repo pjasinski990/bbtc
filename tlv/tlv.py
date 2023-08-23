@@ -28,7 +28,13 @@ class TLV():
 
     @staticmethod
     def parse_tlvs(data: bytes) -> List[TLV]:
-        return []
+        res: List[TLV] = []
+        while data:
+            next_tlv = TLV.from_bytes(data)
+            next_tlv_size = len(next_tlv.to_bytes())
+            data = data[next_tlv_size:]
+            res.append(next_tlv)
+        return res
 
     @staticmethod
     def from_bytes(data: bytes) -> TLV:
@@ -41,7 +47,8 @@ class TLV():
         header_len = 2
         if data[1] == 0xFF:
             header_len = 4
-        self.value = data[header_len:]
+        length = int.from_bytes(data[1:header_len], byteorder='big')
+        self.value = data[header_len:header_len + length]
 
     def to_bytes(self) -> bytes:
         has_long_header = len(self.value) >= 255
