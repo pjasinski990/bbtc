@@ -14,13 +14,14 @@
    limitations under the License.
 """
 
-from dataset import dataset
+from ble.ble_stream_secure import BleStreamSecure
 from tlv.tlv import TLV
 from tlv.tcat_tlv import TcatTLVType
+from dataset.dataset import ThreadDataset
 
 
 class CliCommands:
-    def __init__(self, ble_sstream, dataset):
+    def __init__(self, ble_sstream: BleStreamSecure, dataset: ThreadDataset):
         self._ble_sstream = ble_sstream
         self._dataset = dataset
         self.command_map = {
@@ -42,11 +43,11 @@ class CliCommands:
 
     async def commission(self, args=[]):
         print('Commissioning...')
-        data = TLV(TcatTLVType.ACTIVE_DATASET.value, dataset.dataset).to_bytes()
+        dataset_bytes = self._dataset.to_bytes()
+        data = TLV(TcatTLVType.ACTIVE_DATASET.value, dataset_bytes).to_bytes()
         response = await self._ble_sstream.send_with_resp(data)
         tlv_response = TLV.from_bytes(response)
         return tlv_response
-        print('Done')
 
     async def thread_state_update(self, args=[]):
         if not args[0] or args[0] not in ('on', 'off'):
