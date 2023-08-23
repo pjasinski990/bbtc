@@ -61,7 +61,6 @@ class ThreadDataset:
     def to_bytes(self):
         res = bytes()
         for entry in self.entries.values():
-            print('in', entry.type)
             res += entry.to_tlv().to_bytes()
         return res
 

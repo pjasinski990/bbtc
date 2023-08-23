@@ -35,8 +35,8 @@ class CliCommands:
     async def help(self, args=[]):
         print('Available commands:')
         print('\tcommission - send dataset')
-        print('\tthread on - enable thread')
-        print('\tthread off - disable thread')
+        print('\tthread start - enable thread')
+        print('\tthread stop - disable thread')
         print('\thello - send "hello world" application data')
         print('\texit - close the connection and exit')
         print('\tdataset - display and manipulate Thread dataset')
@@ -50,19 +50,21 @@ class CliCommands:
         return tlv_response
 
     async def thread_state_update(self, args=[]):
-        if not args[0] or args[0] not in ('on', 'off'):
+        start_command = 'start'
+        stop_command = 'stop'
+        if not args[0] or args[0] not in (start_command, stop_command):
             print('Incorrect usage. See help for details.')
             return
 
         tlv_response = None
-        if args[0] == 'on':
+        if args[0] == start_command:
             print('Enabling Thread')
             data = TLV(
                 TcatTLVType.THREAD_START.value, bytes()
             ).to_bytes()
             response = await self._ble_sstream.send_with_resp(data)
             tlv_response = TLV.from_bytes(response)
-        elif args[0] == 'off':
+        elif args[0] == stop_command:
             print('Disabling Thread')
             data = TLV(
                 TcatTLVType.THREAD_STOP.value, bytes()

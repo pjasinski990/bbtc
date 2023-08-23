@@ -26,12 +26,11 @@ from tlv.tlv import TLV
 class DatasetEntry(ABC):
     def __init__(self, type: MeshcopTlvType):
         self.type = type
-        self.used = False
         self.length = None
         self.maxlen = None
 
     def print_content(self, indent: int = 0, excluded_fields: List[str] = []):
-        excluded_fields += ['length', 'maxlen', 'used', 'type']
+        excluded_fields += ['length', 'maxlen', 'type']
         indentation = " " * 4 * indent
         for attr_name in dir(self):
             if not attr_name.startswith('_') and attr_name not in excluded_fields:
