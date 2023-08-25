@@ -16,12 +16,29 @@
 
 import readline
 import shlex
-from commands import CliCommands
+from cli.base_commands import (
+    HelpCommand,
+    HelloCommand,
+    CommissionCommand,
+    ThreadStateCommand
+)
+from cli.datset_commands import DatasetCommand
 
 
 class CLI:
     def __init__(self, ble_sstream, dataset):
-        self._commands = CliCommands(ble_sstream, dataset)
+        self._commands = {
+            'help': HelpCommand(),
+            'hello': HelloCommand(),
+            'commission': CommissionCommand(),
+            'thread': ThreadStateCommand(),
+            'dataset': DatasetCommand()
+        }
+        self._context = {
+            'ble_sstream': ble_sstream,
+            'dataset': dataset,
+            'commands': self._commands
+        }
         readline.set_completer(self.completer)
         readline.parse_and_bind('tab: complete')
 
@@ -41,7 +58,7 @@ class CLI:
         command = command_parts[0]
         args = command_parts[1:]
 
-        if command not in self._commands.command_map:
+        if command not in self._commands.keys():
             raise Exception('Invalid command: {}'.format(command))
 
-        return await self._commands.command_map[command](args)
+        return await self._commands[command].execute(args, self._context)

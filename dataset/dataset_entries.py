@@ -78,7 +78,7 @@ class ActiveTimestamp(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        pass
+        return 'arg1 - timestamp seconds'
 
 
 class PendingTimestamp(DatasetEntry):
@@ -104,7 +104,7 @@ class PendingTimestamp(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        pass
+        return 'arg1 - timestamp seconds'
 
 
 class NetworkKey(DatasetEntry):
@@ -132,7 +132,7 @@ class NetworkKey(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        pass
+        return 'arg1 - networkkey'
 
 
 class NetworkName(DatasetEntry):
@@ -258,7 +258,8 @@ class Channel(DatasetEntry):
         self.channel = 0
 
     def set(self, args: List[str]):
-        pass
+        channel = int(args[0])
+        self.channel = channel
 
     def set_from_tlv(self, tlv: TLV):
         self.channel = int.from_bytes(tlv.value[1:3], byteorder='big')
@@ -270,7 +271,7 @@ class Channel(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        pass
+        return 'arg1 - channel'
 
 
 class Pskc(DatasetEntry):
