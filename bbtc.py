@@ -23,7 +23,7 @@ import logging
 from ble.ble_stream import BleStream
 from ble.ble_stream_secure import BleStreamSecure
 from ble import ble_scanner
-from cli import CLI
+from cli.cli import CLI
 from dataset.dataset import ThreadDataset
 
 
@@ -71,7 +71,8 @@ async def main():
         ds = ThreadDataset()
         cli = CLI(ble_sstream, ds)
         loop = asyncio.get_running_loop()
-        print('Enter \'help\' to see available commands')
+        print('Enter \'help\' to see available commands'
+              ' or \'exit\' to exit the application.')
         while True:
             user_input = await loop.run_in_executor(None, lambda: input('> '))
             if user_input.lower() == 'exit':
