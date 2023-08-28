@@ -22,7 +22,9 @@ from cli.base_commands import (
     CommissionCommand,
     ThreadStateCommand
 )
-from cli.datset_commands import DatasetCommand
+from cli.datset_commands import (
+    DatasetCommand
+)
 
 
 class CLI:
@@ -43,7 +45,33 @@ class CLI:
         readline.parse_and_bind('tab: complete')
 
     def completer(self, text, state):
-        options = [c for c in self._commands.command_map.keys() if c.startswith(text)]
+        command_pool = self._commands.keys()
+        full_line = readline.get_line_buffer().lstrip()
+        words = full_line.split()
+
+        should_suggest_subcommands = len(words) > 1 or (
+            len(words) == 1 and full_line[-1].isspace())
+        if should_suggest_subcommands:
+            if words[0] not in self._commands.keys():
+                return None
+
+            current_command = self._commands[words[0]]
+            if full_line[-1].isspace():
+                subcommands = words[1:]
+            else:
+                subcommands = words[1:-1]
+            for nextarg in subcommands:
+                if nextarg in current_command._subcommands.keys():
+                    current_command = current_command._subcommands[nextarg]
+                else:
+                    return None
+
+            if len(current_command._subcommands) == 0:
+                return None
+
+            command_pool = current_command._subcommands.keys()
+
+        options = [c for c in command_pool if c.startswith(text)]
         if state < len(options):
             return options[state]
         else:
