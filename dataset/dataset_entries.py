@@ -64,7 +64,9 @@ class ActiveTimestamp(DatasetEntry):
         self.ticks = 0
 
     def set(self, args: List[str]):
-        pass
+        if len(args) == 0:
+            raise ValueError('No argument for ActiveTimestamp')
+        self._seconds = int(args[0])
 
     def set_from_tlv(self, tlv: TLV):
         (value,) = struct.unpack('>Q', tlv.value)
@@ -90,7 +92,9 @@ class PendingTimestamp(DatasetEntry):
         self.ticks = 0
 
     def set(self, args: List[str]):
-        pass
+        if len(args) == 0:
+            raise ValueError('No argument for PendingTimestamp')
+        self._seconds = int(args[0])
 
     def set_from_tlv(self, tlv: TLV):
         (value,) = struct.unpack('>Q', tlv.value)
@@ -114,11 +118,11 @@ class NetworkKey(DatasetEntry):
         self.data = ''
 
     def set(self, args: List[str]):
+        if len(args) == 0:
+            raise ValueError('No argument for NetworkKey')
         nk = args[0]
-        if not nk:
-            raise ValueError('Invalid networkkey format')
         if len(nk) != self.length * 2:  # need length * 2 hex characters
-            raise ValueError('Invalid length of networkkey')
+            raise ValueError('Invalid length of NetworkKey')
         self.data = nk
 
     def set_from_tlv(self, tlv: TLV):
@@ -126,7 +130,7 @@ class NetworkKey(DatasetEntry):
 
     def to_tlv(self):
         if len(self.data) != self.length * 2:  # need length * 2 hex characters
-            raise ValueError('Invalid length of networkkey')
+            raise ValueError('Invalid length of NetworkKey')
         value = bytes.fromhex(self.data)
         tlv = struct.pack('>BB', self.type.value, self.length) + value
         return TLV.from_bytes(tlv)
@@ -142,7 +146,12 @@ class NetworkName(DatasetEntry):
         self.data = ''
 
     def set(self, args: List[str]):
-        pass
+        if len(args) == 0:
+            raise ValueError('No argument for NetworkName')
+        nn = args[0]
+        if len(nn) > self.maxlen:
+            raise ValueError('Invalid length of NetworkName')
+        self.data = nn
 
     def set_from_tlv(self, tlv: TLV):
         self.data = tlv.value.decode('utf-8')
@@ -164,7 +173,12 @@ class ExtPanID(DatasetEntry):
         self.data = ''
 
     def set(self, args: List[str]):
-        pass
+        if len(args) == 0:
+            raise ValueError('No argument for ExtPanID')
+        epid = args[0]
+        if len(epid) != self.length * 2:  # need length*2 hex characters
+            raise ValueError('Invalid length of ExtPanID')
+        self.data = epid
 
     def set_from_tlv(self, tlv: TLV):
         self.data = tlv.value.hex()
@@ -188,7 +202,12 @@ class MeshLocalPrefix(DatasetEntry):
         self.data = ''
 
     def set(self, args: List[str]):
-        pass
+        if len(args) == 0:
+            raise ValueError('No argument for MeshLocalPrefix')
+        mlp = args[0]
+        if len(mlp) != self.length * 2:  # need length*2 hex characters
+            raise ValueError('Invalid length of MeshLocalPrefix')
+        self.data = mlp
 
     def set_from_tlv(self, tlv: TLV):
         self.data = tlv.value.hex()
@@ -212,7 +231,10 @@ class DelayTimer(DatasetEntry):
         self.time_remaining = 0
 
     def set(self, args: List[str]):
-        pass
+        if len(args) == 0:
+            raise ValueError('No argument for DelayTimer')
+        dt = int(args[0])
+        self.time_remaining = dt
 
     def set_from_tlv(self, tlv: TLV):
         self.time_remaining = tlv.value
@@ -233,7 +255,12 @@ class PanID(DatasetEntry):
         self.data = ''
 
     def set(self, args: List[str]):
-        pass
+        if len(args) == 0:
+            raise ValueError('No argument for PanID')
+        pid = args[0]
+        if len(pid) != self.length * 2:  # need length*2 hex characters
+            raise ValueError('Invalid length of PanID')
+        self.data = pid
 
     def set_from_tlv(self, tlv: TLV):
         self.data = tlv.value.hex()
@@ -258,6 +285,8 @@ class Channel(DatasetEntry):
         self.channel = 0
 
     def set(self, args: List[str]):
+        if len(args) == 0:
+            raise ValueError('No argument for Channel')
         channel = int(args[0])
         self.channel = channel
 
@@ -281,15 +310,20 @@ class Pskc(DatasetEntry):
         self.data = ''
 
     def set(self, args: List[str]):
-        pass
+        if len(args) == 0:
+            raise ValueError('No argument for Pskc')
+        pskc = args[0]
+        if (len(pskc) > self.maxlen * 2):
+            raise ValueError('Invalid length of Pskc. Can be max '
+                             f'{self.length * 2} hex characters.')
+        self.data = pskc
 
     def set_from_tlv(self, tlv: TLV):
         self.data = tlv.value.hex()
 
     def to_tlv(self):
-        if (
-            len(self.data) > self.maxlen * 2
-        ):  # should not exceed max length*2 hex characters
+        # should not exceed max length*2 hex characters
+        if (len(self.data) > self.maxlen * 2):
             raise ValueError('Invalid length of Pskc')
 
         length_value = len(self.data) // 2
