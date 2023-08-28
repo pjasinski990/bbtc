@@ -71,3 +71,4 @@ class ThreadDataset:
         if type in self.entries:
             self.entries[type].set(args)
             return
+        raise KeyError(f'Key {type} not available in the dataset.')

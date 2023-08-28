@@ -23,30 +23,31 @@ class Command(ABC):
     def __init__(self):
         self._subcommands = {}
 
-    @abstractmethod
     async def execute(self, args, context):
+        if len(args) != 0 and args[0] in self._subcommands.keys():
+            return await self.execute_subcommand(args, context)
+
+        return await self.execute_default(args, context)
+
+    async def execute_subcommand(self, args, context):
+        return await self._subcommands[args[0]].execute(args[1:], context)
+
+    @abstractmethod
+    async def execute_default(self, args, context):
         pass
 
     @abstractmethod
     def get_help_string(self) -> str:
         pass
 
-    async def execute_subcommand(self, args, context):
-        if len(args) == 0 or args[0] not in self._subcommands.keys():
-            print('Incorrect subcommand. Usage: ')
-            print(f'\t{self.print_help(indent=1)}')
-            return
-
-        return await self._subcommands[args[0]].execute(args[1:], context)
-
     def print_help(self, indent=0):
-        indentation = ' ' * 4 * indent
+        indent_width = 4
+        indentation = ' ' * indent_width * indent
         print(f'{indentation}{self.get_help_string()}')
         if len(self._subcommands) != 0:
-            print(f'{indentation}subcommands:')
+            print(f'{indentation}{" " * indent_width}subcommands:')
             for name, sc in self._subcommands.items():
-                print(f'{indentation}    {name}:')
-                sc.print_help(indent=indent + 2)
+                print(f'{indentation}{" " * 2 * indent_width}{name}')
 
 
 class CommandResult(ABC):

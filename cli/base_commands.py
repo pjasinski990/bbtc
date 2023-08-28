@@ -25,11 +25,10 @@ class HelpCommand(Command):
     def get_help_string(self) -> str:
         return 'Display help and return.'
 
-    async def execute(self, args, context):
+    async def execute_default(self, args, context):
         commands = context['commands']
-        print('Available commands:')
         for name, command in commands.items():
-            print(f'    {name}')
+            print(f'  {name}')
             command.print_help(indent=2)
             print()
 
@@ -38,7 +37,7 @@ class HelloCommand(Command):
     def get_help_string(self) -> str:
         return 'Send round trip "Hello world!" message.'
 
-    async def execute(self, args, context):
+    async def execute_default(self, args, context):
         bless: BleStreamSecure = context['ble_sstream']
         print('Sending hello world...')
         data = TLV(
@@ -55,7 +54,7 @@ class CommissionCommand(Command):
     def get_help_string(self) -> str:
         return 'Update the connected device with current dataset.'
 
-    async def execute(self, args, context):
+    async def execute_default(self, args, context):
         bless: BleStreamSecure = context['ble_sstream']
         dataset: ThreadDataset = context['dataset']
 
@@ -71,7 +70,7 @@ class ThreadStartCommand(Command):
     def get_help_string(self) -> str:
         return 'Enable thread interface.'
 
-    async def execute(self, args, context):
+    async def execute_default(self, args, context):
         bless: BleStreamSecure = context['ble_sstream']
 
         print('Enabling Thread...')
@@ -87,7 +86,7 @@ class ThreadStopCommand(Command):
     def get_help_string(self) -> str:
         return 'Disable thread interface.'
 
-    async def execute(self, args, context):
+    async def execute_default(self, args, context):
         bless: BleStreamSecure = context['ble_sstream']
         print('Disabling Thread...')
         data = TLV(
@@ -108,5 +107,5 @@ class ThreadStateCommand(Command):
     def get_help_string(self) -> str:
         return 'Manipulate state of the Thread interface of the connected device.'
 
-    async def execute(self, args, context):
-        return await self.execute_subcommand(args, context)
+    async def execute_default(self, args, context):
+        pass
