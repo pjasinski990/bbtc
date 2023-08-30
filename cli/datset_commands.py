@@ -15,6 +15,7 @@
 """
 
 from cli.command import Command
+from dataset.dataset import initial_dataset
 from dataset.dataset import ThreadDataset
 from tlv.dataset_tlv import MeshcopTlvType
 
@@ -27,6 +28,23 @@ def handle_dataset_entry_command(type: MeshcopTlvType, args, context):
 
     ds.set_entry(type, args)
     print('Done.')
+
+
+class PrintDatasetHexCommand(Command):
+    def get_help_string(self) -> str:
+        return 'Print current dataset as a hexadecimal string.'
+
+    async def execute_default(self, args, context):
+        ds: ThreadDataset = context['dataset']
+        print(ds.to_bytes().hex())
+
+
+class ReloadDatasetCommand(Command):
+    def get_help_string(self) -> str:
+        return 'Print current dataset as a hexadecimal string.'
+
+    async def execute_default(self, args, context):
+        context['dataset'].set_from_bytes(initial_dataset)
 
 
 class ActiveTimestampCommand(Command):
@@ -101,6 +119,14 @@ class ChannelCommand(Command):
         handle_dataset_entry_command(MeshcopTlvType.CHANNEL, args, context)
 
 
+class ChannelMaskCommand(Command):
+    def get_help_string(self) -> str:
+        return 'View and set ChannelMask.'
+
+    async def execute_default(self, args, context):
+        handle_dataset_entry_command(MeshcopTlvType.CHANNELMASK, args, context)
+
+
 class PskcCommand(Command):
     def get_help_string(self) -> str:
         return 'View and set Pskc.'
@@ -109,9 +135,19 @@ class PskcCommand(Command):
         handle_dataset_entry_command(MeshcopTlvType.PSKC, args, context)
 
 
+class SecurityPolicyCommand(Command):
+    def get_help_string(self) -> str:
+        return 'View and set SecurityPolicy.'
+
+    async def execute_default(self, args, context):
+        handle_dataset_entry_command(MeshcopTlvType.SECURITYPOLICY, args, context)
+
+
 class DatasetCommand(Command):
     def __init__(self):
         self._subcommands = {
+            'hex': PrintDatasetHexCommand(),
+            'reload': ReloadDatasetCommand(),
             'activetimestamp': ActiveTimestampCommand(),
             'pendingtimestamp': PendingTimestampCommand(),
             'networkkey': NetworkKeyCommand(),
@@ -121,7 +157,9 @@ class DatasetCommand(Command):
             'delay': DelayTimerCommand(),
             'panid': PanIDCommand(),
             'channel': ChannelCommand(),
-            'pskc': PskcCommand()
+            'channelmask': ChannelMaskCommand(),
+            'pskc': PskcCommand(),
+            'securitypolicy': SecurityPolicyCommand()
         }
 
     def get_help_string(self) -> str:

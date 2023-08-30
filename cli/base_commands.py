@@ -46,6 +46,8 @@ class HelloCommand(Command):
                 'Hello world!',
                 'ascii')).to_bytes()
         response = await bless.send_with_resp(data)
+        if not response:
+            return
         tlv_response = TLV.from_bytes(response)
         return tlv_response
 
@@ -62,6 +64,8 @@ class CommissionCommand(Command):
         dataset_bytes = dataset.to_bytes()
         data = TLV(TcatTLVType.ACTIVE_DATASET.value, dataset_bytes).to_bytes()
         response = await bless.send_with_resp(data)
+        if not response:
+            return
         tlv_response = TLV.from_bytes(response)
         return tlv_response
 
@@ -78,6 +82,8 @@ class ThreadStartCommand(Command):
             TcatTLVType.THREAD_START.value, bytes()
         ).to_bytes()
         response = await bless.send_with_resp(data)
+        if not response:
+            return
         tlv_response = TLV.from_bytes(response)
         return tlv_response
 
@@ -93,6 +99,8 @@ class ThreadStopCommand(Command):
             TcatTLVType.THREAD_STOP.value, bytes()
         ).to_bytes()
         response = await bless.send_with_resp(data)
+        if not response:
+            return
         tlv_response = TLV.from_bytes(response)
         return tlv_response
 
