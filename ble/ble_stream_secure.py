@@ -16,8 +16,11 @@
 
 import asyncio
 import ssl
+import logging
 
 from .ble_stream import BleStream
+
+logger = logging.getLogger(__name__)
 
 
 class BleStreamSecure:
@@ -82,6 +85,7 @@ class BleStreamSecure:
             await asyncio.sleep(0.1)
             data = self.ble_stream.recv(buffersize)
         if not data:
+            logger.warning('No response when response expected.')
             return b''
 
         self.incoming.write(data)

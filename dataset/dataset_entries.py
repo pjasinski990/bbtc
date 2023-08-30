@@ -36,6 +36,8 @@ class DatasetEntry(ABC):
             if not attr_name.startswith('_') and attr_name not in excluded_fields:
                 value = getattr(self, attr_name)
                 if not inspect.ismethod(value):
+                    if isinstance(value, bytes):
+                        value = value.hex()
                     print(f'{indentation}{attr_name}: {value}')
 
     @abstractmethod
@@ -80,7 +82,7 @@ class ActiveTimestamp(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        return 'arg1 - timestamp seconds'
+        return '[seconds]'
 
 
 class PendingTimestamp(DatasetEntry):
@@ -108,14 +110,14 @@ class PendingTimestamp(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        return 'arg1 - timestamp seconds'
+        return '[seconds]'
 
 
 class NetworkKey(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.NETWORKKEY)
         self.length = 16  # spec defined
-        self.data = ''
+        self.data: str = ''
 
     def set(self, args: List[str]):
         if len(args) == 0:
@@ -136,14 +138,14 @@ class NetworkKey(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        return 'arg1 - networkkey'
+        return '[networkkey]'
 
 
 class NetworkName(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.NETWORKNAME)
         self.maxlen = 16
-        self.data = ''
+        self.data: str = ''
 
     def set(self, args: List[str]):
         if len(args) == 0:
@@ -163,14 +165,14 @@ class NetworkName(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        pass
+        return '[networkname]'
 
 
 class ExtPanID(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.EXTPANID)
         self.length = 8  # spec defined
-        self.data = ''
+        self.data: str = ''
 
     def set(self, args: List[str]):
         if len(args) == 0:
@@ -192,7 +194,7 @@ class ExtPanID(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        pass
+        return '[extpanid]'
 
 
 class MeshLocalPrefix(DatasetEntry):
@@ -221,7 +223,7 @@ class MeshLocalPrefix(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        pass
+        return '[meshlocalprefix]'
 
 
 class DelayTimer(DatasetEntry):
@@ -245,14 +247,14 @@ class DelayTimer(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        pass
+        return '[delay]'
 
 
 class PanID(DatasetEntry):
     def __init__(self):
         super().__init__(MeshcopTlvType.PANID)
         self.length = 2  # spec defined
-        self.data = ''
+        self.data: str = ''
 
     def set(self, args: List[str]):
         if len(args) == 0:
@@ -274,7 +276,7 @@ class PanID(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        pass
+        return '[panid]'
 
 
 class Channel(DatasetEntry):
@@ -300,7 +302,7 @@ class Channel(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        return 'arg1 - channel'
+        return '[channel]'
 
 
 class Pskc(DatasetEntry):
@@ -332,7 +334,7 @@ class Pskc(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        pass
+        return '[pskc]'
 
 
 class SecurityPolicy(DatasetEntry):
@@ -340,21 +342,37 @@ class SecurityPolicy(DatasetEntry):
         super().__init__(MeshcopTlvType.SECURITYPOLICY)
         self.length = 4  # spec defined
         self.rotation_time = 0
-        self.out_of_band = 0  # O
-        self.native = 0  # N
-        self.routers_1_2 = 0  # R
-        self.external_commissioners = 0  # C
-        self.reserved = 0  # B
-        self.commercial_commissioning_off = 0  # CCM
-        self.autonomous_enrollment_off = 0  # AE
-        self.networkkey_provisioning_off = 0  # NP
-        self.thread_over_ble = 0  # L
-        self.non_ccm_routers_off = 0  # NCR
-        self.rsv = 0b111  # Rsv
-        self.version_threshold_for_routing = 0  # VR
+        self.out_of_band = 0  # o
+        self.native = 0  # n
+        self.routers_1_2 = 0  # r
+        self.external_commissioners = 0  # c
+        self.reserved = 0
+        self.commercial_commissioning_off = 0  # C
+        self.autonomous_enrollment_off = 0  # e
+        self.networkkey_provisioning_off = 0  # p
+        self.thread_over_ble = 0
+        self.non_ccm_routers_off = 0  # R
+        self.rsv = 0b111
+        self.version_threshold = 0
 
     def set(self, args: List[str]):
-        pass
+        if len(args) == 0:
+            raise ValueError('No argument for SecurityPolicy')
+        rotation_time, flags, version_threshold = args + [None] * (3 - len(args))
+        self.rotation_time = int(rotation_time) & 0xffff
+
+        if flags:
+            self.out_of_band = 1 if 'o' in flags else 0
+            self.native = 1 if 'n' in flags else 0
+            self.routers_1_2 = 1 if 'r' in flags else 0
+            self.external_commissioners = 1 if 'c' in flags else 0
+            self.commercial_commissioning_off = 0 if 'C' in flags else 1
+            self.autonomous_enrollment_off = 0 if 'e' in flags else 1
+            self.networkkey_provisioning_off = 0 if 'p' in flags else 1
+            self.non_ccm_routers_off = 0 if 'R' in flags else 1
+
+        if version_threshold:
+            self.version_threshold = int(version_threshold) & 0b111
 
     def set_from_tlv(self, tlv: TLV):
         value = int.from_bytes(tlv.value, byteorder='big')
@@ -371,7 +389,7 @@ class SecurityPolicy(DatasetEntry):
         self.thread_over_ble = (value >> 7) & 0x1
         self.non_ccm_routers_off = (value >> 6) & 0x1
         self.rsv = (value >> 3) & 0x7
-        self.version_threshold_for_routing = value & 0x7
+        self.version_threshold = value & 0x7
 
     def to_tlv(self):
         value = self.rotation_time << 16
@@ -386,12 +404,35 @@ class SecurityPolicy(DatasetEntry):
         value |= self.thread_over_ble << 7
         value |= self.non_ccm_routers_off << 6
         value |= self.rsv << 3
-        value |= self.version_threshold_for_routing
+        value |= self.version_threshold
         tlv = struct.pack('>BBI', 1, self.length, value)
         return TLV.from_bytes(tlv)
 
+    def print_content(self, indent: int = 0):
+        flags = ''
+        if self.out_of_band:
+            flags += 'o'
+        if self.native:
+            flags += 'n'
+        if self.routers_1_2:
+            flags += 'r'
+        if self.external_commissioners:
+            flags += 'c'
+        if not self.commercial_commissioning_off:
+            flags += 'C'
+        if not self.autonomous_enrollment_off:
+            flags += 'e'
+        if not self.networkkey_provisioning_off:
+            flags += 'p'
+        if not self.non_ccm_routers_off:
+            flags += 'R'
+        indentation = " " * 4 * indent
+        print(f'{indentation}rotation_time: {self.rotation_time}')
+        print(f'{indentation}flags: {flags}')
+        print(f'{indentation}version_threshold: {self.version_threshold}')
+
     def expected_args_explanation() -> str:
-        pass
+        return '[<rotation_time> [flags] [version_threshold]]'
 
 
 class ChannelMask(DatasetEntry):
@@ -400,7 +441,17 @@ class ChannelMask(DatasetEntry):
         self.entries: List[ChannelMaskEntry] = []
 
     def set(self, args: List[str]):
-        pass
+        # to remain consistent with the OpenThread CLI API,
+        # provided hex string is value of the first channel mask entry
+        if len(args) == 0:
+            raise ValueError('No argument for ChannelMask')
+        if args[0].startswith('0x'):
+            args[0] = args[0][2:]
+        channelmsk = bytes.fromhex(args[0])
+        self.entries = [ChannelMaskEntry()]
+        self.entries[0].channel_mask = channelmsk
+
+        print(self.entries)
 
     def print_content(self, indent: int = 0):
         super().print_content(indent=indent, excluded_fields=['entries'])
@@ -423,13 +474,12 @@ class ChannelMask(DatasetEntry):
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
-        pass
+        return '[channel_mask_value]'
 
 
 class ChannelMaskEntry(DatasetEntry):
     def __init__(self):
         self.channel_page = 0
-        self.mask_length = 0
         self.channel_mask: bytes = None
 
     def set(self, args: List[str]):
@@ -441,7 +491,8 @@ class ChannelMaskEntry(DatasetEntry):
         self.channel_mask = tlv.value
 
     def to_tlv(self):
-        tlv = struct.pack('>BB', self.channel_page, self.mask_length) + self.channel_mask
+        mask_len = len(self.channel_mask)
+        tlv = struct.pack('>BB', self.channel_page, mask_len) + self.channel_mask
         return TLV.from_bytes(tlv)
 
     def expected_args_explanation() -> str:
