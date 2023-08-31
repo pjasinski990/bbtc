@@ -28,9 +28,8 @@ class HelpCommand(Command):
     async def execute_default(self, args, context):
         commands = context['commands']
         for name, command in commands.items():
-            print(f'  {name}')
-            command.print_help(indent=2)
-            print()
+            print(f'{name}')
+            command.print_help(indent=1)
 
 
 class HelloCommand(Command):

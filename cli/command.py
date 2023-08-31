@@ -44,10 +44,14 @@ class Command(ABC):
         indent_width = 4
         indentation = ' ' * indent_width * indent
         print(f'{indentation}{self.get_help_string()}')
-        if len(self._subcommands) != 0:
-            print(f'{indentation}{" " * indent_width}subcommands:')
+
+        if 'help' in self._subcommands.keys():
+            print(f'{indentation}"help" command available.')
+        elif len(self._subcommands) != 0:
+            print(f'{indentation}Subcommands:')
             for name, sc in self._subcommands.items():
-                print(f'{indentation}{" " * 2 * indent_width}{name}')
+                print(f'{indentation}{" " * indent_width}{name}\t- ', end='')
+                sc.print_help()
 
 
 class CommandResult(ABC):
