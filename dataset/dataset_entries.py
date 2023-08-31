@@ -52,10 +52,6 @@ class DatasetEntry(ABC):
     def set(self, args: List[str]):
         pass
 
-    @abstractmethod
-    def expected_args_explanation() -> str:
-        pass
-
 
 class ActiveTimestamp(DatasetEntry):
     def __init__(self):
@@ -80,9 +76,6 @@ class ActiveTimestamp(DatasetEntry):
         value = (self.seconds << 16) | (self.ticks << 1) | self.ubit
         tlv = struct.pack('>BBQ', self.type.value, self.length, value)
         return TLV.from_bytes(tlv)
-
-    def expected_args_explanation() -> str:
-        return '[seconds]'
 
 
 class PendingTimestamp(DatasetEntry):
@@ -109,9 +102,6 @@ class PendingTimestamp(DatasetEntry):
         tlv = struct.pack('>BBQ', self.type.value, self.length, value)
         return TLV.from_bytes(tlv)
 
-    def expected_args_explanation() -> str:
-        return '[seconds]'
-
 
 class NetworkKey(DatasetEntry):
     def __init__(self):
@@ -137,9 +127,6 @@ class NetworkKey(DatasetEntry):
         tlv = struct.pack('>BB', self.type.value, self.length) + value
         return TLV.from_bytes(tlv)
 
-    def expected_args_explanation() -> str:
-        return '[networkkey]'
-
 
 class NetworkName(DatasetEntry):
     def __init__(self):
@@ -163,9 +150,6 @@ class NetworkName(DatasetEntry):
         value = self.data.encode('utf-8')
         tlv = struct.pack('>BB', self.type.value, length_value) + value
         return TLV.from_bytes(tlv)
-
-    def expected_args_explanation() -> str:
-        return '[networkname]'
 
 
 class ExtPanID(DatasetEntry):
@@ -193,9 +177,6 @@ class ExtPanID(DatasetEntry):
         tlv = struct.pack('>BB', self.type.value, self.length) + value
         return TLV.from_bytes(tlv)
 
-    def expected_args_explanation() -> str:
-        return '[extpanid]'
-
 
 class MeshLocalPrefix(DatasetEntry):
     def __init__(self):
@@ -222,9 +203,6 @@ class MeshLocalPrefix(DatasetEntry):
         tlv = struct.pack('>BB', self.type.value, self.length) + value
         return TLV.from_bytes(tlv)
 
-    def expected_args_explanation() -> str:
-        return '[meshlocalprefix]'
-
 
 class DelayTimer(DatasetEntry):
     def __init__(self):
@@ -245,9 +223,6 @@ class DelayTimer(DatasetEntry):
         value = self.time_remaining
         tlv = struct.pack('>BBI', self.type.value, self.length, value)
         return TLV.from_bytes(tlv)
-
-    def expected_args_explanation() -> str:
-        return '[delay]'
 
 
 class PanID(DatasetEntry):
@@ -275,9 +250,6 @@ class PanID(DatasetEntry):
         tlv = struct.pack('>BB', self.type.value, self.length) + value
         return TLV.from_bytes(tlv)
 
-    def expected_args_explanation() -> str:
-        return '[panid]'
-
 
 class Channel(DatasetEntry):
     def __init__(self):
@@ -300,9 +272,6 @@ class Channel(DatasetEntry):
         tlv = struct.pack('>BBB', self.type.value, self.length, self.channel_page)
         tlv += struct.pack('>H', self.channel)
         return TLV.from_bytes(tlv)
-
-    def expected_args_explanation() -> str:
-        return '[channel]'
 
 
 class Pskc(DatasetEntry):
@@ -332,9 +301,6 @@ class Pskc(DatasetEntry):
         value = bytes.fromhex(self.data)
         tlv = struct.pack('>BB', self.type.value, length_value) + value
         return TLV.from_bytes(tlv)
-
-    def expected_args_explanation() -> str:
-        return '[pskc]'
 
 
 class SecurityPolicy(DatasetEntry):
@@ -431,9 +397,6 @@ class SecurityPolicy(DatasetEntry):
         print(f'{indentation}flags: {flags}')
         print(f'{indentation}version_threshold: {self.version_threshold}')
 
-    def expected_args_explanation() -> str:
-        return '[<rotation_time> [flags] [version_threshold]]'
-
 
 class ChannelMask(DatasetEntry):
     def __init__(self):
@@ -473,9 +436,6 @@ class ChannelMask(DatasetEntry):
         tlv = struct.pack('>BB', self.type.value, len(tlv_value)) + tlv_value
         return TLV.from_bytes(tlv)
 
-    def expected_args_explanation() -> str:
-        return '[channel_mask_value]'
-
 
 class ChannelMaskEntry(DatasetEntry):
     def __init__(self):
@@ -494,9 +454,6 @@ class ChannelMaskEntry(DatasetEntry):
         mask_len = len(self.channel_mask)
         tlv = struct.pack('>BB', self.channel_page, mask_len) + self.channel_mask
         return TLV.from_bytes(tlv)
-
-    def expected_args_explanation() -> str:
-        pass
 
 
 def create_dataset_entry(type: MeshcopTlvType, args=None):
