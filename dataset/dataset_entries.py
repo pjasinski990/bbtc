@@ -112,6 +112,8 @@ class NetworkKey(DatasetEntry):
     def set(self, args: List[str]):
         if len(args) == 0:
             raise ValueError('No argument for NetworkKey')
+        if args[0].startswith('0x'):
+            args[0] = args[0][2:]
         nk = args[0]
         if len(nk) != self.length * 2:  # need length * 2 hex characters
             raise ValueError('Invalid length of NetworkKey')
@@ -161,6 +163,8 @@ class ExtPanID(DatasetEntry):
     def set(self, args: List[str]):
         if len(args) == 0:
             raise ValueError('No argument for ExtPanID')
+        if args[0].startswith('0x'):
+            args[0] = args[0][2:]
         epid = args[0]
         if len(epid) != self.length * 2:  # need length*2 hex characters
             raise ValueError('Invalid length of ExtPanID')
@@ -187,6 +191,8 @@ class MeshLocalPrefix(DatasetEntry):
     def set(self, args: List[str]):
         if len(args) == 0:
             raise ValueError('No argument for MeshLocalPrefix')
+        if args[0].startswith('0x'):
+            args[0] = args[0][2:]
         mlp = args[0]
         if len(mlp) != self.length * 2:  # need length*2 hex characters
             raise ValueError('Invalid length of MeshLocalPrefix')
@@ -234,6 +240,8 @@ class PanID(DatasetEntry):
     def set(self, args: List[str]):
         if len(args) == 0:
             raise ValueError('No argument for PanID')
+        if args[0].startswith('0x'):
+            args[0] = args[0][2:]
         pid = args[0]
         if len(pid) != self.length * 2:  # need length*2 hex characters
             raise ValueError('Invalid length of PanID')
@@ -283,6 +291,8 @@ class Pskc(DatasetEntry):
     def set(self, args: List[str]):
         if len(args) == 0:
             raise ValueError('No argument for Pskc')
+        if args[0].startswith('0x'):
+            args[0] = args[0][2:]
         pskc = args[0]
         if (len(pskc) > self.maxlen * 2):
             raise ValueError('Invalid length of Pskc. Can be max '
