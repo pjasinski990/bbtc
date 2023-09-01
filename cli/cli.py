@@ -22,7 +22,7 @@ from cli.base_commands import (
     CommissionCommand,
     ThreadStateCommand
 )
-from cli.datset_commands import (
+from cli.dataset_commands import (
     DatasetCommand
 )
 

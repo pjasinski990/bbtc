@@ -17,7 +17,7 @@
 from ble.ble_stream_secure import BleStreamSecure
 from tlv.tlv import TLV
 from tlv.tcat_tlv import TcatTLVType
-from cli.command import Command
+from cli.command import Command, CommandResultNone, CommandResultTLV
 from dataset.dataset import ThreadDataset
 
 
@@ -30,6 +30,7 @@ class HelpCommand(Command):
         for name, command in commands.items():
             print(f'{name}')
             command.print_help(indent=1)
+        return CommandResultNone()
 
 
 class HelloCommand(Command):
@@ -48,7 +49,7 @@ class HelloCommand(Command):
         if not response:
             return
         tlv_response = TLV.from_bytes(response)
-        return tlv_response
+        return CommandResultTLV(tlv_response)
 
 
 class CommissionCommand(Command):
@@ -66,7 +67,7 @@ class CommissionCommand(Command):
         if not response:
             return
         tlv_response = TLV.from_bytes(response)
-        return tlv_response
+        return CommandResultTLV(tlv_response)
 
 
 class ThreadStartCommand(Command):
@@ -84,7 +85,7 @@ class ThreadStartCommand(Command):
         if not response:
             return
         tlv_response = TLV.from_bytes(response)
-        return tlv_response
+        return CommandResultTLV(tlv_response)
 
 
 class ThreadStopCommand(Command):
@@ -101,7 +102,7 @@ class ThreadStopCommand(Command):
         if not response:
             return
         tlv_response = TLV.from_bytes(response)
-        return tlv_response
+        return CommandResultTLV(tlv_response)
 
 
 class ThreadStateCommand(Command):
@@ -115,4 +116,5 @@ class ThreadStateCommand(Command):
         return 'Manipulate state of the Thread interface of the connected device.'
 
     async def execute_default(self, args, context):
-        pass
+        print('Invalid usage. Provide a subcommand.')
+        return CommandResultNone()

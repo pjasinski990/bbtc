@@ -25,6 +25,7 @@ from ble.ble_stream_secure import BleStreamSecure
 from ble import ble_scanner
 from cli.cli import CLI
 from dataset.dataset import ThreadDataset
+from cli.command import CommandResult
 
 
 BBTC_SERVICE_UUID = '6E400001-B5A3-F393-E0A9-E50E24DCCA9E'
@@ -51,7 +52,7 @@ async def main():
     print('Finding device...')
     device = await get_device_by_args(args)
     if device is None:
-        quit_with_reason('Device not found')
+        quit_with_reason('No device found')
 
     print(f'Connecting to {device}')
     async with await BleStream.create(
@@ -79,9 +80,8 @@ async def main():
                 print('Disconnecting...')
                 break
             try:
-                result = await cli.evaluate_input(user_input)
-                if result:
-                    print('Result:', result)
+                result: CommandResult = await cli.evaluate_input(user_input)
+                result.pretty_print()
             except Exception as e:
                 print(e)
 
@@ -112,7 +112,7 @@ async def get_device_by_args(args):
 def get_int_in_range(min_value, max_value):
     while True:
         try:
-            user_input = int(input('>'))
+            user_input = int(input('> '))
             if min_value <= user_input <= max_value:
                 return user_input
             else:

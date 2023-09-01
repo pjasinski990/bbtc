@@ -15,25 +15,35 @@
 """
 
 from tlv.tlv import TLV
+from tlv.tcat_tlv import TcatTLVType
 
 from abc import ABC, abstractmethod
+
+
+class CommandResult(ABC):
+    def __init__(self, value=None):
+        self.value = value
+
+    @abstractmethod
+    def pretty_print(self):
+        pass
 
 
 class Command(ABC):
     def __init__(self):
         self._subcommands = {}
 
-    async def execute(self, args, context):
+    async def execute(self, args, context) -> CommandResult:
         if len(args) != 0 and args[0] in self._subcommands.keys():
             return await self.execute_subcommand(args, context)
 
         return await self.execute_default(args, context)
 
-    async def execute_subcommand(self, args, context):
+    async def execute_subcommand(self, args, context) -> CommandResult:
         return await self._subcommands[args[0]].execute(args[1:], context)
 
     @abstractmethod
-    async def execute_default(self, args, context):
+    async def execute_default(self, args, context) -> CommandResult:
         pass
 
     @abstractmethod
@@ -54,27 +64,19 @@ class Command(ABC):
                 sc.print_help()
 
 
-class CommandResult(ABC):
-    def __init__(self, value):
-        self.value = value
-
-    @abstractmethod
-    def pretty_print(self):
-        pass
-
-
 class CommandResultTLV(CommandResult):
     def pretty_print(self):
-        value: TLV = self.value
-        print(value)
+        tlv: TLV = self.value
+        tlv_type = TcatTLVType.from_value(tlv.type)
+        print('Result: TLV:')
+        if tlv_type is not None:
+            print(f'\tTYPE:\t{TcatTLVType.from_value(tlv.type).name}')
+        else:
+            print(f'\tTYPE:\tunknown: {hex(tlv.type)} ({tlv.type})')
+        print(f'\tLEN:\t{len(tlv.value)}')
+        print(f'\tVALUE:\t0x{tlv.value.hex()}')
 
 
 class CommandResultNone(CommandResult):
     def pretty_print(self):
         pass
-
-
-class CommandResultString(CommandResult):
-    def pretty_print(self):
-        value: str = self.value
-        print(value)

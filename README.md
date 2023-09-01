@@ -37,9 +37,10 @@ The application will connect to the first discovered, matching device and set up
 
 ## Commands
 The application supports following interactive CLI commands:
-- `help` - display available commands
-- `commission` - commission the device with a predefined, hardcoded dataset
-- `thread start` - enable Thread interface
-- `thread stop` - disable Thread interface
-- `hello` - send "hello world" application data and read the response
-- `exit` - close the connection and exit
+- `help` - display available commands.
+- `commission` - commission the device with current dataset.
+- `thread start` - enable Thread interface.
+- `thread stop` - disable Thread interface.
+- `hello` - send "hello world" application data and read the response.
+- `exit` - close the connection and exit.
+- `dataset` - view and manipulate current dataset. See `dataset help` for more information.

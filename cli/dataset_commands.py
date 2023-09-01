@@ -14,7 +14,7 @@
    limitations under the License.
 """
 
-from cli.command import Command
+from cli.command import Command, CommandResultNone
 from dataset.dataset import ThreadDataset, initial_dataset
 from tlv.dataset_tlv import MeshcopTlvType
 
@@ -23,10 +23,11 @@ def handle_dataset_entry_command(type: MeshcopTlvType, args, context):
     ds: ThreadDataset = context['dataset']
     if len(args) == 0:
         ds.get_entry(type).print_content()
-        return
+        return CommandResultNone()
 
     ds.set_entry(type, args)
     print('Done.')
+    return CommandResultNone()
 
 
 class DatasetHelpCommand(Command):
@@ -34,13 +35,16 @@ class DatasetHelpCommand(Command):
         return 'Display help message and return.'
 
     async def execute_default(self, args, context):
-        indentation = ' ' * 4
+        indent_width = 4
+        indentation = ' ' * indent_width
         commands: ThreadDataset = context['commands']
         ds_command: Command = commands['dataset']
         print(ds_command.get_help_string())
         print('Subcommands:')
         for name, subcommand in ds_command._subcommands.items():
-            print(f'{indentation}{name}\t- {subcommand.get_help_string()}')
+            print(f'{indentation}{name}')
+            print(f'{indentation}{" " * indent_width}{subcommand.get_help_string()}')
+        return CommandResultNone()
 
 
 class PrintDatasetHexCommand(Command):
@@ -50,6 +54,7 @@ class PrintDatasetHexCommand(Command):
     async def execute_default(self, args, context):
         ds: ThreadDataset = context['dataset']
         print(ds.to_bytes().hex())
+        return CommandResultNone()
 
 
 class ReloadDatasetCommand(Command):
@@ -58,6 +63,7 @@ class ReloadDatasetCommand(Command):
 
     async def execute_default(self, args, context):
         context['dataset'].set_from_bytes(initial_dataset)
+        return CommandResultNone()
 
 
 class ActiveTimestampCommand(Command):
@@ -65,7 +71,7 @@ class ActiveTimestampCommand(Command):
         return 'View and set ActiveTimestamp seconds. Arguments: [seconds (int)]'
 
     async def execute_default(self, args, context):
-        handle_dataset_entry_command(MeshcopTlvType.ACTIVETIMESTAMP, args, context)
+        return handle_dataset_entry_command(MeshcopTlvType.ACTIVETIMESTAMP, args, context)
 
 
 class PendingTimestampCommand(Command):
@@ -73,7 +79,8 @@ class PendingTimestampCommand(Command):
         return 'View and set PendingTimestamp seconds. Arguments: [seconds (int)]'
 
     async def execute_default(self, args, context):
-        handle_dataset_entry_command(MeshcopTlvType.PENDINGTIMESTAMP, args, context)
+        return handle_dataset_entry_command(
+            MeshcopTlvType.PENDINGTIMESTAMP, args, context)
 
 
 class NetworkKeyCommand(Command):
@@ -81,7 +88,7 @@ class NetworkKeyCommand(Command):
         return 'View and set NetworkKey. Arguments: [nk (hexstring, len=32)]'
 
     async def execute_default(self, args, context):
-        handle_dataset_entry_command(MeshcopTlvType.NETWORKKEY, args, context)
+        return handle_dataset_entry_command(MeshcopTlvType.NETWORKKEY, args, context)
 
 
 class NetworkNameCommand(Command):
@@ -89,7 +96,7 @@ class NetworkNameCommand(Command):
         return 'View and set NetworkName. Arguments: [nn (string, maxlen=16)]'
 
     async def execute_default(self, args, context):
-        handle_dataset_entry_command(MeshcopTlvType.NETWORKNAME, args, context)
+        return handle_dataset_entry_command(MeshcopTlvType.NETWORKNAME, args, context)
 
 
 class ExtPanIDCommand(Command):
@@ -97,7 +104,7 @@ class ExtPanIDCommand(Command):
         return 'View and set ExtPanID. Arguments: [extpanid (hexstring, len=16)]'
 
     async def execute_default(self, args, context):
-        handle_dataset_entry_command(MeshcopTlvType.EXTPANID, args, context)
+        return handle_dataset_entry_command(MeshcopTlvType.EXTPANID, args, context)
 
 
 class MeshLocalPrefixCommand(Command):
@@ -105,7 +112,7 @@ class MeshLocalPrefixCommand(Command):
         return 'View and set MeshLocalPrefix. Arguments: [mlp (hexstring, len=16)]'
 
     async def execute_default(self, args, context):
-        handle_dataset_entry_command(MeshcopTlvType.MESHLOCALPREFIX, args, context)
+        return handle_dataset_entry_command(MeshcopTlvType.MESHLOCALPREFIX, args, context)
 
 
 class DelayTimerCommand(Command):
@@ -113,7 +120,7 @@ class DelayTimerCommand(Command):
         return 'View and set DelayTimer delay. Arguments: [delay (int)]'
 
     async def execute_default(self, args, context):
-        handle_dataset_entry_command(MeshcopTlvType.DELAYTIMER, args, context)
+        return handle_dataset_entry_command(MeshcopTlvType.DELAYTIMER, args, context)
 
 
 class PanIDCommand(Command):
@@ -121,7 +128,7 @@ class PanIDCommand(Command):
         return 'View and set PanID. Arguments: [panid (hexstring, len=4)]'
 
     async def execute_default(self, args, context):
-        handle_dataset_entry_command(MeshcopTlvType.PANID, args, context)
+        return handle_dataset_entry_command(MeshcopTlvType.PANID, args, context)
 
 
 class ChannelCommand(Command):
@@ -129,7 +136,7 @@ class ChannelCommand(Command):
         return 'View and set Channel. Arguments: [channel (int)]'
 
     async def execute_default(self, args, context):
-        handle_dataset_entry_command(MeshcopTlvType.CHANNEL, args, context)
+        return handle_dataset_entry_command(MeshcopTlvType.CHANNEL, args, context)
 
 
 class ChannelMaskCommand(Command):
@@ -137,7 +144,7 @@ class ChannelMaskCommand(Command):
         return 'View and set ChannelMask. Arguments: [mask (hexstring)]'
 
     async def execute_default(self, args, context):
-        handle_dataset_entry_command(MeshcopTlvType.CHANNELMASK, args, context)
+        return handle_dataset_entry_command(MeshcopTlvType.CHANNELMASK, args, context)
 
 
 class PskcCommand(Command):
@@ -145,7 +152,7 @@ class PskcCommand(Command):
         return 'View and set Pskc. Arguments: [pskc (hexstring, maxlen=32)]'
 
     async def execute_default(self, args, context):
-        handle_dataset_entry_command(MeshcopTlvType.PSKC, args, context)
+        return handle_dataset_entry_command(MeshcopTlvType.PSKC, args, context)
 
 
 class SecurityPolicyCommand(Command):
@@ -154,7 +161,7 @@ class SecurityPolicyCommand(Command):
                '[<rotation_time (int)> [flags (string)] [version_threshold (int)]]'
 
     async def execute_default(self, args, context):
-        handle_dataset_entry_command(MeshcopTlvType.SECURITYPOLICY, args, context)
+        return handle_dataset_entry_command(MeshcopTlvType.SECURITYPOLICY, args, context)
 
 
 class DatasetCommand(Command):
@@ -184,3 +191,4 @@ class DatasetCommand(Command):
     async def execute_default(self, args, context):
         ds: ThreadDataset = context['dataset']
         ds.print_content()
+        return CommandResultNone()
