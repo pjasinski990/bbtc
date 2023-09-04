@@ -81,7 +81,8 @@ async def main():
                 break
             try:
                 result: CommandResult = await cli.evaluate_input(user_input)
-                result.pretty_print()
+                if result:
+                    result.pretty_print()
             except Exception as e:
                 print(e)
 
