@@ -78,7 +78,7 @@ class BleStreamSecure:
         encode = self.outgoing.read(4096)
         await self.ble_stream.send(encode)
 
-    async def recv(self, buffersize, timeout=0):
+    async def recv(self, buffersize, timeout=1):
         end_time = asyncio.get_event_loop().time() + timeout
         data = self.ble_stream.recv(buffersize)
         while not data and asyncio.get_event_loop().time() < end_time:
