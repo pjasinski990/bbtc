@@ -34,10 +34,11 @@ class Command(ABC):
         self._subcommands = {}
 
     async def execute(self, args, context) -> CommandResult:
-        if len(args) != 0 and args[0] in self._subcommands.keys():
+        if len(args) == 0:
+            return await self.execute_default(args, context)
+        if args[0] in self._subcommands.keys():
             return await self.execute_subcommand(args, context)
-
-        return await self.execute_default(args, context)
+        raise ValueError('Invalid subcommand provided.')
 
     async def execute_subcommand(self, args, context) -> CommandResult:
         return await self._subcommands[args[0]].execute(args[1:], context)
@@ -74,7 +75,10 @@ class CommandResultTLV(CommandResult):
         else:
             print(f'\tTYPE:\tunknown: {hex(tlv.type)} ({tlv.type})')
         print(f'\tLEN:\t{len(tlv.value)}')
-        print(f'\tVALUE:\t0x{tlv.value.hex()}')
+        if tlv_type == TcatTLVType.APPLICATION:
+            print(f'\tVALUE:\t{tlv.value.decode("ascii")}')
+        else:
+            print(f'\tVALUE:\t0x{tlv.value.hex()}')
 
 
 class CommandResultNone(CommandResult):
