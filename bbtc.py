@@ -34,7 +34,7 @@ BBTC_RX_CHAR_UUID = '6E400002-B5A3-F393-E0A9-E50E24DCCA9E'
 
 
 async def main():
-    logging.basicConfig(level=logging.ERROR)
+    logging.basicConfig(level=logging.WARNING)
 
     parser = argparse.ArgumentParser(description='Device parameters')
     parser.add_argument('--debug', help='Enable debug logs', action='store_true')
