@@ -17,6 +17,8 @@
 from itertools import count, takewhile
 from typing import Iterator
 import logging
+import time
+from asyncio import sleep
 
 from bleak import BleakClient
 from bleak.backends.characteristic import BleakGATTCharacteristic
@@ -27,6 +29,7 @@ logger = logging.getLogger(__name__)
 class BleStream:
     def __init__(self, client, service_uuid, tx_char_uuid, rx_char_uuid):
         self.__receive_buffer = b''
+        self.__last_recv_time = None
         self.client = client
         self.service_uuid = service_uuid
         self.tx_char_uuid = tx_char_uuid
@@ -42,6 +45,7 @@ class BleStream:
     def __handle_rx(self, _: BleakGATTCharacteristic, data: bytearray):
         logger.debug(f'received {len(data)} bytes')
         self.__receive_buffer += data
+        self.__last_recv_time = time.time()
 
     @staticmethod
     def __sliced(data: bytes, n: int) -> Iterator[bytes]:
@@ -63,9 +67,13 @@ class BleStream:
             await self.client.write_gatt_char(rx_char, s)
         return len(data)
 
-    def recv(self, bufsize, flags=0):
+    async def recv(self, bufsize, recv_timeout=0.2):
         if not self.__receive_buffer:
             return b''
+
+        while time.time() - self.__last_recv_time <= recv_timeout:
+            await sleep(0.1)
+
         message = self.__receive_buffer[:bufsize]
         self.__receive_buffer = self.__receive_buffer[bufsize:]
         logger.debug(f'retrieved {message}')

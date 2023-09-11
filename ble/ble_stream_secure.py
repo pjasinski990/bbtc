@@ -54,7 +54,7 @@ class BleStreamSecure:
             # SSLWantWrite means ssl wants to send data over the link,
             # but might need a receive first
             except ssl.SSLWantWriteError:
-                output = self.ble_stream.recv(4096)
+                output = await self.ble_stream.recv(4096)
                 if output:
                     self.incoming.write(output)
                 data = self.outgoing.read()
@@ -68,7 +68,7 @@ class BleStreamSecure:
                 data = self.outgoing.read()
                 if data:
                     await self.ble_stream.send(data)
-                output = self.ble_stream.recv(4096)
+                output = await self.ble_stream.recv(4096)
                 if output:
                     self.incoming.write(output)
                 await asyncio.sleep(0.1)
@@ -80,10 +80,10 @@ class BleStreamSecure:
 
     async def recv(self, buffersize, timeout=1):
         end_time = asyncio.get_event_loop().time() + timeout
-        data = self.ble_stream.recv(buffersize)
+        data = await self.ble_stream.recv(buffersize)
         while not data and asyncio.get_event_loop().time() < end_time:
             await asyncio.sleep(0.1)
-            data = self.ble_stream.recv(buffersize)
+            data = await self.ble_stream.recv(buffersize)
         if not data:
             logger.warning('No response when response expected.')
             return b''
@@ -95,14 +95,14 @@ class BleStreamSecure:
                 break
             # if recv called before entire message was received from the link
             except ssl.SSLWantReadError:
-                more = self.ble_stream.recv(buffersize)
+                more = await self.ble_stream.recv(buffersize)
                 while not more:
                     await asyncio.sleep(0.1)
-                    more = self.ble_stream.recv(buffersize)
+                    more = await self.ble_stream.recv(buffersize)
                 self.incoming.write(more)
         return decode
 
     async def send_with_resp(self, bytes):
         await self.send(bytes)
-        res = await self.recv(4096, timeout=5)
+        res = await self.recv(buffersize=4096, timeout=5)
         return res
