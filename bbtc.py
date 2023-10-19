@@ -31,7 +31,7 @@ from cli.command import CommandResult
 BBTC_SERVICE_UUID = 'FFFB'
 BBTC_TX_CHAR_UUID = '6BD10D8B-85A7-4E5A-BA2D-C83558A5F220'
 BBTC_RX_CHAR_UUID = '7FDDF61F-280A-4773-B448-BA1B8FE0DD69'
-
+SERVER_COMMON_NAME = 'myvendor.com/tcat/mydev'
 
 async def main():
     logging.basicConfig(level=logging.WARNING)
@@ -66,7 +66,7 @@ async def main():
         )
 
         print('Setting up secure channel...')
-        await ble_sstream.do_handshake(hostname='UnlimitedAccess')
+        await ble_sstream.do_handshake(hostname=SERVER_COMMON_NAME)
         print('Done')
 
         ds = ThreadDataset()
