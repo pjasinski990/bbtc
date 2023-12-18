@@ -33,6 +33,7 @@ BBTC_RX_CHAR_UUID = '6BD10D8B-85A7-4E5A-BA2D-C83558A5F220'
 BBTC_TX_CHAR_UUID = '7FDDF61F-280A-4773-B448-BA1B8FE0DD69'
 SERVER_COMMON_NAME = 'myvendor.com/tcat/mydev'
 
+
 async def main():
     logging.basicConfig(level=logging.WARNING)
 
@@ -100,7 +101,7 @@ async def get_device_by_args(args):
         if tcat_devices:
             print('Found devices:\n')
             for i, device in enumerate(tcat_devices):
-                print(f'{i+1}: {device.name} - {device.address}')
+                print(f'{i + 1}: {device.name} - {device.address}')
         else:
             quit_with_reason('No devices found.')
         print('\nSelect the target number to connect to it.')
