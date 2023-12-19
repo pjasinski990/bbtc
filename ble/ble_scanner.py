@@ -39,8 +39,8 @@ async def find_first_by_mac(mac):
 async def scan_tcat_devices():
     scanner = BleakScanner()
     tcat_devices = []
-    devices_dict = await scanner.discover(return_adv=True)
-    for _, (device, adv_data) in devices_dict.items():
-        if BBTC_SERVICE_UUID.lower() in adv_data.service_uuids:
-            tcat_devices.append(device)
+    devices_dict = await scanner.discover(return_adv=True,
+                                          service_uuids=[BBTC_SERVICE_UUID.lower()])
+    for _, (device, _) in devices_dict.items():
+        tcat_devices.append(device)
     return tcat_devices
