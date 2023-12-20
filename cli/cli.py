@@ -16,25 +16,31 @@
 
 import readline
 import shlex
+from ble.ble_stream_secure import BleStreamSecure
 from cli.base_commands import (
     HelpCommand,
     HelloCommand,
     CommissionCommand,
-    ThreadStateCommand
+    ThreadStateCommand,
+    ScanCommand
 )
 from cli.dataset_commands import (
     DatasetCommand
 )
+from dataset.dataset import ThreadDataset
+from typing import Optional
 
 
 class CLI:
-    def __init__(self, ble_sstream, dataset):
+    def __init__(self, dataset: ThreadDataset,
+                 ble_sstream: Optional[BleStreamSecure] = None):
         self._commands = {
             'help': HelpCommand(),
             'hello': HelloCommand(),
             'commission': CommissionCommand(),
+            'dataset': DatasetCommand(),
             'thread': ThreadStateCommand(),
-            'dataset': DatasetCommand()
+            'scan': ScanCommand(),
         }
         self._context = {
             'ble_sstream': ble_sstream,

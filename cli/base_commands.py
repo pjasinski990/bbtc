@@ -14,11 +14,17 @@
    limitations under the License.
 """
 
+from ble.ble_connection_constants import BBTC_SERVICE_UUID, BBTC_TX_CHAR_UUID, \
+    BBTC_RX_CHAR_UUID, SERVER_COMMON_NAME
+from ble.ble_stream import BleStream
 from ble.ble_stream_secure import BleStreamSecure
+from ble import ble_scanner
 from tlv.tlv import TLV
 from tlv.tcat_tlv import TcatTLVType
 from cli.command import Command, CommandResultNone, CommandResultTLV
 from dataset.dataset import ThreadDataset
+from utils import select_device_by_user_input
+from os import path
 
 
 class HelpCommand(Command):
@@ -118,3 +124,36 @@ class ThreadStateCommand(Command):
     async def execute_default(self, args, context):
         print('Invalid usage. Provide a subcommand.')
         return CommandResultNone()
+
+
+class ScanCommand(Command):
+    def get_help_string(self) -> str:
+        return 'Perform scan for TCAT devices.'
+
+    async def execute_default(self, args, context):
+        if not (context['ble_sstream'] is None):
+            del context['ble_sstream']
+
+        tcat_devices = await ble_scanner.scan_tcat_devices()
+        device = select_device_by_user_input(tcat_devices)
+
+        if device is None:
+            return CommandResultNone()
+
+        ble_sstream = None
+
+        print(f'Connecting to {device}')
+        ble_stream = await BleStream.create(
+            device.address, BBTC_SERVICE_UUID, BBTC_TX_CHAR_UUID, BBTC_RX_CHAR_UUID
+        )
+        ble_sstream = BleStreamSecure(ble_stream)
+        ble_sstream.load_cert(
+            certfile=path.join('auth', 'commissioner_cert.pem'),
+            keyfile=path.join('auth', 'commissioner_key.pem'),
+            cafile=path.join('auth', 'ca_cert.pem'),
+        )
+
+        print('Setting up secure channel...')
+        await ble_sstream.do_handshake(hostname=SERVER_COMMON_NAME)
+        print('Done')
+        context['ble_sstream'] = ble_sstream

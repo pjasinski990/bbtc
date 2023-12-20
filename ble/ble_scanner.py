@@ -37,4 +37,5 @@ async def scan_tcat_devices():
                                           service_uuids=[BBTC_SERVICE_UUID.lower()])
     for _, (device, _) in devices_dict.items():
         tcat_devices.append(device)
+
     return tcat_devices
