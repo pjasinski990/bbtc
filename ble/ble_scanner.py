@@ -18,12 +18,6 @@ from bleak import BleakScanner
 from bbtc import BBTC_SERVICE_UUID
 
 
-async def find_first_by_service_uuid(service_uuid):
-    match_uuid = lambda dev, adv_data: service_uuid.lower() in adv_data.service_uuids
-    device = await BleakScanner.find_device_by_filter(match_uuid)
-    return device
-
-
 async def find_first_by_name(name):
     match_name = lambda dev, adv_data: name == dev.name
     device = await BleakScanner.find_device_by_filter(match_name)

@@ -42,7 +42,6 @@ async def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--mac', type=str, help='Device MAC address', action='store')
     group.add_argument('--name', type=str, help='Device name', action='store')
-    group.add_argument('--uuid', type=str, help='Target service UUID', action='store')
     group.add_argument('--scan', help='Scan all available devices', action='store_true')
     args = parser.parse_args()
 
@@ -94,8 +93,6 @@ async def get_device_by_args(args):
         device = await ble_scanner.find_first_by_mac(args.mac)
     elif args.name:
         device = await ble_scanner.find_first_by_name(args.name)
-    elif args.uuid:
-        device = await ble_scanner.find_first_by_service_uuid(args.uuid)
     elif args.scan:
         tcat_devices = await ble_scanner.scan_tcat_devices()
         if tcat_devices:
