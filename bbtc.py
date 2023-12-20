@@ -20,18 +20,15 @@ import argparse
 from os import path
 import logging
 
+from ble.ble_connection_constants import BBTC_SERVICE_UUID, BBTC_TX_CHAR_UUID, \
+    BBTC_RX_CHAR_UUID, SERVER_COMMON_NAME
 from ble.ble_stream import BleStream
 from ble.ble_stream_secure import BleStreamSecure
 from ble import ble_scanner
 from cli.cli import CLI
 from dataset.dataset import ThreadDataset
 from cli.command import CommandResult
-
-
-BBTC_SERVICE_UUID = 'FFFB'
-BBTC_RX_CHAR_UUID = '6BD10D8B-85A7-4E5A-BA2D-C83558A5F220'
-BBTC_TX_CHAR_UUID = '7FDDF61F-280A-4773-B448-BA1B8FE0DD69'
-SERVER_COMMON_NAME = 'myvendor.com/tcat/mydev'
+from utils import select_device_by_user_input
 
 
 async def main():
@@ -39,7 +36,7 @@ async def main():
 
     parser = argparse.ArgumentParser(description='Device parameters')
     parser.add_argument('--debug', help='Enable debug logs', action='store_true')
-    group = parser.add_mutually_exclusive_group(required=True)
+    group = parser.add_mutually_exclusive_group()
     group.add_argument('--mac', type=str, help='Device MAC address', action='store')
     group.add_argument('--name', type=str, help='Device name', action='store')
     group.add_argument('--scan', help='Scan all available devices', action='store_true')
@@ -49,15 +46,15 @@ async def main():
         logging.getLogger('ble_stream').setLevel(logging.DEBUG)
         logging.getLogger('ble_stream_secure').setLevel(logging.DEBUG)
 
-    print('Finding device...')
     device = await get_device_by_args(args)
-    if device is None:
-        quit_with_reason('No device found')
 
-    print(f'Connecting to {device}')
-    async with await BleStream.create(
-        device.address, BBTC_SERVICE_UUID, BBTC_TX_CHAR_UUID, BBTC_RX_CHAR_UUID
-    ) as ble_stream:
+    ble_sstream = None
+
+    if not (device is None):
+        print(f'Connecting to {device}')
+        ble_stream = await BleStream.create(
+            device.address, BBTC_SERVICE_UUID, BBTC_TX_CHAR_UUID, BBTC_RX_CHAR_UUID
+        )
         ble_sstream = BleStreamSecure(ble_stream)
         ble_sstream.load_cert(
             certfile=path.join('auth', 'commissioner_cert.pem'),
@@ -69,22 +66,22 @@ async def main():
         await ble_sstream.do_handshake(hostname=SERVER_COMMON_NAME)
         print('Done')
 
-        ds = ThreadDataset()
-        cli = CLI(ble_sstream, ds)
-        loop = asyncio.get_running_loop()
-        print('Enter \'help\' to see available commands'
-              ' or \'exit\' to exit the application.')
-        while True:
-            user_input = await loop.run_in_executor(None, lambda: input('> '))
-            if user_input.lower() == 'exit':
-                print('Disconnecting...')
-                break
-            try:
-                result: CommandResult = await cli.evaluate_input(user_input)
-                if result:
-                    result.pretty_print()
-            except Exception as e:
-                print(e)
+    ds = ThreadDataset()
+    cli = CLI(ds, ble_sstream)
+    loop = asyncio.get_running_loop()
+    print('Enter \'help\' to see available commands'
+          ' or \'exit\' to exit the application.')
+    while True:
+        user_input = await loop.run_in_executor(None, lambda: input('> '))
+        if user_input.lower() == 'exit':
+            print('Disconnecting...')
+            break
+        try:
+            result: CommandResult = await cli.evaluate_input(user_input)
+            if result:
+                result.pretty_print()
+        except Exception as e:
+            print(e)
 
 
 async def get_device_by_args(args):
@@ -95,37 +92,9 @@ async def get_device_by_args(args):
         device = await ble_scanner.find_first_by_name(args.name)
     elif args.scan:
         tcat_devices = await ble_scanner.scan_tcat_devices()
-        if tcat_devices:
-            print('Found devices:\n')
-            for i, device in enumerate(tcat_devices):
-                print(f'{i + 1}: {device.name} - {device.address}')
-        else:
-            quit_with_reason('No devices found.')
-        print('\nSelect the target number to connect to it.')
-        selected = get_int_in_range(1, len(tcat_devices))
-        device = tcat_devices[selected - 1]
-        print('Selected ', device)
+        device = select_device_by_user_input(tcat_devices)
+
     return device
-
-
-def get_int_in_range(min_value, max_value):
-    while True:
-        try:
-            user_input = int(input('> '))
-            if min_value <= user_input <= max_value:
-                return user_input
-            else:
-                print('The value is out of range. Try again.')
-        except ValueError:
-            print('The value is not an integer. Try again.')
-        except KeyboardInterrupt:
-            quit_with_reason('Program interrupted by user. Quitting.')
-
-
-def quit_with_reason(reason):
-    print(reason)
-    exit(1)
-
 
 if __name__ == '__main__':
     try:
