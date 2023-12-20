@@ -381,7 +381,7 @@ class SecurityPolicy(DatasetEntry):
         value |= self.non_ccm_routers_off << 6
         value |= self.rsv << 3
         value |= self.version_threshold
-        tlv = struct.pack('>BBI', 1, self.length, value)
+        tlv = struct.pack('>BBI', self.type.value, self.length, value)
         return TLV.from_bytes(tlv)
 
     def print_content(self, indent: int = 0):
@@ -423,8 +423,6 @@ class ChannelMask(DatasetEntry):
         channelmsk = bytes.fromhex(args[0])
         self.entries = [ChannelMaskEntry()]
         self.entries[0].channel_mask = channelmsk
-
-        print(self.entries)
 
     def print_content(self, indent: int = 0):
         super().print_content(indent=indent, excluded_fields=['entries'])
